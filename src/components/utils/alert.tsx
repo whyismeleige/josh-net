@@ -1,0 +1,80 @@
+"use client";
+import React, { useState, useEffect } from "react";
+import { useAlert } from "@/contexts/AlertContext";
+import {
+  Alert as AlertType,
+  AlertType as AlertTypeEnum,
+} from "../../types/alert";
+import { cn } from "@/lib/utils";
+import {
+  AlertDescription,
+  AlertTitle,
+  AlertTimer,
+  Alert as AlertUI,
+} from "../ui/alert";
+import {
+  BellRing,
+  CircleCheckBig,
+  Info,
+  MessageCircleWarning,
+  TriangleAlert,
+} from "lucide-react";
+
+interface AlertProps {
+  alert: AlertType;
+}
+
+const Alert: React.FC<AlertProps> = ({ alert }) => {
+  const { removeAlert } = useAlert();
+  const [isVisible, setIsVisible] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(100);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsVisible(true), 10);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - alert.startTime;
+      const remaining = Math.max(0, 100 - (elapsed / alert.duration) * 100);
+      setTimeLeft(remaining);
+      if (remaining <= 0) clearInterval(interval);
+    }, 50);
+
+    return () => clearInterval(interval);
+  }, [alert]);
+
+  const handleClose = (): void => {
+    setIsLeaving(true);
+    setTimeout(() => {
+      removeAlert(alert.id);
+    }, 300);
+  };
+
+  const getIcon = () => {
+    switch (alert.type) {
+      case "success":
+        return <CircleCheckBig />;
+      case "error":
+        return <MessageCircleWarning />;
+      case "warning":
+        return <TriangleAlert />;
+      case "info":
+        return <Info />;
+      default:
+        return <BellRing />;
+    }
+  };
+  return (
+    <AlertUI variant={alert.type === "error" ? "error" : "default"}>
+      {getIcon()}
+      <AlertTitle>{alert.title}</AlertTitle>
+      <AlertDescription>{alert.message}</AlertDescription>
+      <AlertTimer variant={alert.type} timeLeft={timeLeft}></AlertTimer>
+    </AlertUI>
+  );
+};
+
+export default Alert;

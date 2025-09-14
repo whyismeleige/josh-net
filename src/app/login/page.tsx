@@ -10,9 +10,9 @@ export default function LoginPage() {
     
   };
   const handleSignup = (data: {
-    email: String;
-    password: String;
-    confirmPassword: String;
+    email: string;
+    password: string;
+    confirmPassword: string;
   }) => {
 
   };

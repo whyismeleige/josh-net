@@ -11,7 +11,7 @@ interface AuthFormProps {
   onSubmit: (data: {
     email: string;
     password: string;
-    confirmPassword: String;
+    confirmPassword: string;
   }) => void;
   resetForm?: boolean;
   toggleMode: () => void;

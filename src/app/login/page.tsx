@@ -6,7 +6,7 @@ import { useAlert } from "@/contexts/AlertContext";
 
 export default function LoginPage() {
   const [loginMode, toggleLoginMode] = useState(true);
-  const handleLogin = (data: { email: String; password: String }) => {
+  const handleLogin = (data: { email: string; password: string }) => {
     
   };
   const handleSignup = (data: {

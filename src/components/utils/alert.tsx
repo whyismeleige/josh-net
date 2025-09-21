@@ -5,7 +5,6 @@ import {
   Alert as AlertType,
   AlertType as AlertTypeEnum,
 } from "../../types/alert";
-import { cn } from "@/lib/utils";
 import {
   AlertDescription,
   AlertTitle,
@@ -36,9 +35,12 @@ const Alert: React.FC<AlertProps> = ({ alert }) => {
   }, []);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      const elapsed = Date.now() - alert.startTime;
-      const remaining = Math.max(0, 100 - (elapsed / alert.duration) * 100);
+    const startTime = alert.startTime ?? Date.now();
+    const duration = alert.duration ?? 5000;
+
+    const interval = setInterval(() => { 
+      const elapsed = Date.now() - startTime;
+      const remaining = Math.max(0, 100 - (elapsed / duration) * 100);
       setTimeLeft(remaining);
       if (remaining <= 0) clearInterval(interval);
     }, 50);

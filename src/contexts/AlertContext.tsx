@@ -30,10 +30,10 @@ export const AlertProvider: React.FC<AlertProviderProps> = ({ children }) => {
   const addAlert = useCallback((alertData: Omit<Alert, "id">): number => {
     const id = Date.now() + Math.random();
     const newAlert: Alert = {
-      type: "info",
+      ...alertData,
+      type: alertData.type || "info",
       autoClose: true,
       duration: 5000,
-      ...alertData,
       startTime: Date.now(),
       id,
     };

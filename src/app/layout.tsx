@@ -1,7 +1,8 @@
 import "./globals.css";
-import { ThemeProvider } from "@/components/utils/theme-provider";
+import { ThemeProvider } from "@/contexts/ThemeProvider";
 import { AlertProvider } from "@/contexts/AlertContext";
-import AlertContainer from "@/components/blocks/AlertContainer";
+import { AuthProvider } from "@/contexts/AuthContext";
+import AlertContainer from "@/components/features/AlertContainer";
 
 export const metadata = {
   title: "Next.js",
@@ -19,7 +20,7 @@ export default function RootLayout({
       <body>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <AlertProvider>
-            {children}
+            <AuthProvider>{children}</AuthProvider>
             <AlertContainer />
           </AlertProvider>
         </ThemeProvider>

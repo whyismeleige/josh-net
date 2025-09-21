@@ -1,20 +1,27 @@
 "use client";
 import { GalleryVerticalEnd } from "lucide-react";
-import AuthForm from "@/components/blocks/AuthForm";
+import AuthForm from "@/components/features/auth/AuthForm";
 import { useState } from "react";
-import { useAlert } from "@/contexts/AlertContext";
+import { useAuth } from "@/contexts/AuthContext";
+import Image from "next/image";
 
 export default function LoginPage() {
   const [loginMode, toggleLoginMode] = useState(true);
-  const handleLogin = (data: { email: string; password: string }) => {
-    
+  const { login, register } = useAuth();
+
+  const handleLogin = async (data: { email: string; password: string }) => {
+    const response = await login(data.email, data.password);
+    console.log(response);
   };
-  const handleSignup = (data: {
+  const handleSignup = async (data: {
     email: string;
     password: string;
     confirmPassword: string;
+    username: string;
   }) => {
-
+    const response = await register(data.email, data.password, data.username);
+    console.log(response);
+    toggleLoginMode(!loginMode);
   };
   return (
     <div className="grid min-h-svh lg:grid-cols-2">
@@ -48,7 +55,7 @@ export default function LoginPage() {
         </div>
       </div>
       <div className="bg-muted relative hidden lg:block">
-        <img
+        <Image
           src="/placeholder.svg"
           alt="Image"
           className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"

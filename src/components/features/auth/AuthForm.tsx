@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState, FormEvent, useEffect } from "react";
+import useGoogleAuth from "@/hooks/use-google-auth";
 
 interface AuthFormProps {
   className?: "";
@@ -12,6 +13,7 @@ interface AuthFormProps {
     email: string;
     password: string;
     confirmPassword: string;
+    username: string;
   }) => void;
   resetForm?: boolean;
   toggleMode: () => void;
@@ -27,6 +29,8 @@ const AuthForm: React.FC<AuthFormProps> = ({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [username, setUsername] = useState("");
+  const { signInWithGoogle } = useGoogleAuth();
 
   useEffect(() => {
     if (resetForm) {
@@ -37,7 +41,7 @@ const AuthForm: React.FC<AuthFormProps> = ({
 
   const handleSumbit = (e: FormEvent) => {
     e.preventDefault();
-    onSubmit({ email, password, confirmPassword });
+    onSubmit({ email, password, confirmPassword, username });
   };
 
   return (
@@ -63,6 +67,18 @@ const AuthForm: React.FC<AuthFormProps> = ({
             required
           />
         </div>
+        {mode === "Signup" && (
+          <div className="grid gap-3">
+            <Label htmlFor="username">Name</Label>
+            <Input
+              id="username"
+              type="name"
+              placeholder="Enter your Name"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+            />
+          </div>
+        )}
         <div className="grid gap-3">
           <div className="flex items-center">
             <Label htmlFor="password">Password</Label>
@@ -107,7 +123,7 @@ const AuthForm: React.FC<AuthFormProps> = ({
             Or continue with
           </span>
         </div>
-        <Button variant="outline" className="w-full">
+        <Button variant="outline" className="w-full" onClick={signInWithGoogle}>
           <svg
             xmlns="http://www.w3.org/2000/svg"
             preserveAspectRatio="xMidYMid"

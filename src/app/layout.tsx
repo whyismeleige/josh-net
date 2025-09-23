@@ -3,6 +3,7 @@ import { ThemeProvider } from "@/contexts/ThemeProvider";
 import { AlertProvider } from "@/contexts/AlertContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import AlertContainer from "@/components/features/AlertContainer";
+import { SidebarProvider } from "@/components/ui/sidebar";
 
 export const metadata = {
   title: "Next.js",
@@ -18,12 +19,14 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head />
       <body>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <AlertProvider>
-            <AuthProvider>{children}</AuthProvider>
-            <AlertContainer />
-          </AlertProvider>
-        </ThemeProvider>
+        
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+            <AlertProvider>
+              <AuthProvider>{children}</AuthProvider>
+              <AlertContainer />
+            </AlertProvider>
+          </ThemeProvider>
+        
       </body>
     </html>
   );

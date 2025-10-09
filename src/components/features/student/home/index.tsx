@@ -2,7 +2,7 @@
 import AppSidebar from "@/components/blocks/Sidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import SiteMain from "./Main";
-import { sidebarData } from "./sidebarData";
+import { sidebarData } from "../sidebarData";
 
 export default function StudentHome() {
   return (

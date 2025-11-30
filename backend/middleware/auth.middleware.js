@@ -2,6 +2,7 @@ const { decodeAccessToken } = require("../utils/auth.utils");
 const User = require("../models").user;
 
 exports.authenticateToken = async (req, res, next) => {
+  
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
 

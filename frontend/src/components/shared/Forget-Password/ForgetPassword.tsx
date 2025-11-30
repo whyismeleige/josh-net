@@ -9,31 +9,17 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-import { useAppDispatch } from "@/src/hooks/redux";
+import { useAppDispatch, useAppSelector } from "@/src/hooks/redux";
 import { Eye, EyeOff } from "lucide-react";
 import { FC, useState } from "react";
 import { OTPDialog } from "../OTP-Dialog/OTPDialog";
 import { addNotification } from "@/src/store/slices/notification.slice";
-import { SendOTP } from "@/src/lib/auth.api";
 import { validateEmail, validatePasswords } from "@/src/utils/auth.utils";
-import { BACKEND_URL } from "@/src/utils/config";
+import { changePassword, sendOTP } from "@/src/store/slices/auth.slice";
 
 interface ForgetPasswordDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-}
-
-async function ChangePassword(credentials: {
-  userId: string;
-  newPassword: string;
-}) {
-  return fetch(`${BACKEND_URL}/api/v1/auth/change-password`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(credentials),
-  }).then((response) => response.json());
 }
 
 export const ForgetPasswordDialog: FC<ForgetPasswordDialogProps> = ({
@@ -41,19 +27,18 @@ export const ForgetPasswordDialog: FC<ForgetPasswordDialogProps> = ({
   onOpenChange,
 }) => {
   const dispatch = useAppDispatch();
+  const { isLoading } = useAppSelector((state) => state.auth);
 
   const [email, setEmail] = useState("");
+
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, toggleShowPassword] = useState(false);
   const [steps, setSteps] = useState(1);
-  const [loading, setLoading] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
 
   const handleSubmit = async () => {
     try {
-      setLoading(true);
-
       if (steps === 1) {
         if (!validateEmail(email)) {
           dispatch(
@@ -66,27 +51,20 @@ export const ForgetPasswordDialog: FC<ForgetPasswordDialogProps> = ({
           clearStates();
           return;
         }
-        const response = await SendOTP({ purpose: "password_reset", email });
 
-        if (response.type === "success") {
-          dispatch(
-            addNotification({
-              title: `OTP Sent to Email`,
-              description: response.message,
-              type: response.type,
-            })
-          );
-          localStorage.setItem("verificationId", response.verificationId);
-          setOpenDialog(true);
-        } else {
-          dispatch(
-            addNotification({
-              title: "Error in Sending OTP",
-              description: response.message,
-              type: response.type,
-            })
-          );
-        }
+        const response = await dispatch(
+          sendOTP({ purpose: "password_reset", email })
+        ).unwrap();
+
+        dispatch(
+          addNotification({
+            title: `OTP Sent to Email`,
+            description: response.message,
+            type: response.type,
+          })
+        );
+
+        setOpenDialog(true);
       }
       if (steps === 2) {
         if (!validatePasswords(password, confirmPassword)) {
@@ -99,34 +77,28 @@ export const ForgetPasswordDialog: FC<ForgetPasswordDialogProps> = ({
           );
           return;
         }
-        const userId = localStorage.getItem("userId");
-        if (!userId) throw new Error();
 
-        const response = await ChangePassword({ userId, newPassword: password });
-        console.log(response);
-        if (response.type === "success") {
-          dispatch(
-            addNotification({
-              type: response.type,
-              title: "Success",
-              description: response.message,
-            })
-          );
-          localStorage.removeItem("userId");
-          onOpenChange(false);
-        }
+        const response = await dispatch(changePassword(password)).unwrap();
+
+        dispatch(
+          addNotification({
+            type: response.type,
+            title: "Success",
+            description: response.message,
+          })
+        );
+
+        onOpenChange(false);
       }
-    } catch (error) {
+    } catch (error: any | unknown) {
       dispatch(
         addNotification({
           title: "Error",
-          description: "Error in Password Change, Try Again",
+          description: error,
           type: "error",
         })
       );
       clearStates();
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -216,11 +188,11 @@ export const ForgetPasswordDialog: FC<ForgetPasswordDialogProps> = ({
           </>
         )}
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={handleClose} disabled={loading}>
+          <AlertDialogCancel onClick={handleClose} disabled={isLoading}>
             Cancel
           </AlertDialogCancel>
-          <Button onClick={handleSubmit} disabled={loading}>
-            {loading ? (
+          <Button onClick={handleSubmit} disabled={isLoading}>
+            {isLoading ? (
               <>
                 <Spinner /> Processing
               </>

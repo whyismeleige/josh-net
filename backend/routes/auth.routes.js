@@ -13,6 +13,8 @@ router.post("/refresh-token", controller.refreshToken);
 router.post("/logout", middleware.authenticateToken, controller.logout);
 router.post("/logout-all", middleware.authenticateToken, controller.logoutAll);
 
+router.get("/profile", middleware.authenticateToken, controller.getProfile);
+
 router.get("/google", controller.googleAuth);
 router.get("/google/callback", controller.googleCallback);
 

@@ -10,10 +10,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { ModeToggle } from "@/components/ui/mode-toggle";
 import { Spinner } from "@/components/ui/spinner";
-import { useAppDispatch } from "@/src/hooks/redux";
-import { setUser } from "@/src/store/slices/auth.slice";
+import { useAppDispatch, useAppSelector } from "@/src/hooks/redux";
+import { loginUser, registerUser } from "@/src/store/slices/auth.slice";
 import { addNotification } from "@/src/store/slices/notification.slice";
-import { BACKEND_URL } from "@/src/utils/config";
 import { SiGoogle } from "@icons-pack/react-simple-icons";
 import { Eye, EyeOff, GalleryVerticalEnd } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -21,41 +20,15 @@ import { FormEvent, useState } from "react";
 import { OTPDialog } from "../../shared/OTP-Dialog/OTPDialog";
 import useGoogleAuth from "@/src/hooks/useGoogleAuth";
 import { ForgetPasswordDialog } from "../../shared/Forget-Password/ForgetPassword";
-
-type Mode = "Login" | "Sign Up";
-
-async function RegisterUserLocal(credentials: {
-  email: string;
-  password: string;
-  name: string;
-}) {
-  return fetch(`${BACKEND_URL}/api/v1/auth/register`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(credentials),
-  }).then((response) => response.json());
-}
-
-async function LoginUserLocal(credentials: {
-  email: string;
-  password: string;
-}) {
-  return fetch(`${BACKEND_URL}/api/v1/auth/login`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(credentials),
-  }).then((response) => response.json());
-}
+import { LocalAuthResponse, Mode } from "@/src/types/auth.types";
 
 export default function AuthPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const dispatch = useAppDispatch();
+
   const { signInWithGoogle } = useGoogleAuth();
+  const { isLoading } = useAppSelector((state) => state.auth);
 
   let query = searchParams.get("mode");
 
@@ -64,29 +37,18 @@ export default function AuthPage() {
   const [password, setPassword] = useState("");
   const [showPassword, toggleShowPassword] = useState(false);
   const [name, setName] = useState("");
-  const [loading, setLoading] = useState(false);
   const [openDialog, toggleOpenDialog] = useState(false);
   const [openPasswordDialog, togglePasswordDialog] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     try {
-      setLoading(true);
-      const response =
+      const response: LocalAuthResponse =
         mode === "Login"
-          ? await LoginUserLocal({ email, password })
-          : await RegisterUserLocal({ email, password, name });
-      if (response.type === "error") {
-        dispatch(
-          addNotification({
-            title: `Error in ${mode}`,
-            description: response.message,
-            type: response.type,
-          })
-        );
-        return;
-      }
-      if (response.type === "success" && response.user) {
+          ? await dispatch(loginUser({ email, password })).unwrap()
+          : await dispatch(registerUser({ email, password, name })).unwrap();
+
+      if (response.user) {
         dispatch(
           addNotification({
             title: `Success in ${mode}`,
@@ -94,27 +56,28 @@ export default function AuthPage() {
             type: response.type,
           })
         );
-        dispatch(setUser(response.user));
-        localStorage.setItem("accessToken", response.accessToken);
-        localStorage.setItem("refreshToken", response.refreshToken);
         router.replace(`/${response.user.role}/dashboard`);
         return;
       }
-      if (response.type === "success") {
-        dispatch(
-          addNotification({
-            title: `OTP Sent to Email`,
-            description: response.message,
-            type: response.type,
-          })
-        );
-        localStorage.setItem("verificationId", response.verificationId);
-        toggleOpenDialog(true);
-      }
-    } catch (error) {
-      console.log(error);
-    } finally {
-      setLoading(false);
+
+      dispatch(
+        addNotification({
+          title: `OTP Sent to Email`,
+          description: response.message,
+          type: response.type,
+        })
+      );
+
+      toggleOpenDialog(true);
+
+    } catch (error: any | unknown) {
+      dispatch(
+        addNotification({
+          title: "Error",
+          description: error,
+          type: "error",
+        })
+      );
     }
   };
 
@@ -213,8 +176,8 @@ export default function AuthPage() {
                   </div>
                 </Field>
                 <Field>
-                  <Button type="submit" disabled={loading}>
-                    {loading ? (
+                  <Button type="submit" disabled={isLoading}>
+                    {isLoading ? (
                       <>
                         <Spinner />
                         Processing
@@ -230,11 +193,21 @@ export default function AuthPage() {
                     variant="outline"
                     type="button"
                     onClick={signInWithGoogle}
+                    disabled={isLoading}
                   >
-                    <SiGoogle />
-                    Continue with Gmail
+                    {isLoading ? (
+                      <>
+                        <Spinner />
+                        Processing
+                      </>
+                    ) : (
+                      <>
+                        <SiGoogle />
+                        Continue with Gmail
+                      </>
+                    )}
                   </Button>
-                  <FieldDescription className="text-center">
+                  <FieldDescription className="pt-2 text-center">
                     {mode === "Login" ? `Don't` : "Already"} have an account?{" "}
                     <span
                       className="underline underline-offset-4 cursor-pointer"
@@ -244,6 +217,11 @@ export default function AuthPage() {
                     >
                       {mode === "Login" ? "Sign Up" : "Login"}
                     </span>
+                  </FieldDescription>
+                  <FieldDescription className="px-6 text-center">
+                    By clicking continue, you agree to our{" "}
+                    <a href="#">Terms of Service</a> and{" "}
+                    <a href="#">Privacy Policy</a>.
                   </FieldDescription>
                 </Field>
               </FieldGroup>

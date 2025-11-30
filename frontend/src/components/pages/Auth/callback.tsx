@@ -1,6 +1,6 @@
 "use client";
 import { Spinner } from "@/components/ui/spinner";
-import { setUser } from "@/src/store/slices/auth.slice";
+import { setCredentials } from "@/src/store/slices/auth.slice";
 import { addNotification } from "@/src/store/slices/notification.slice";
 import { BACKEND_URL } from "@/src/utils/config";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -39,9 +39,7 @@ export default function AuthCallback() {
               type: data.type,
             })
           );
-          dispatch(setUser(data.user));
-          localStorage.setItem("accessToken", data.accessToken);
-          localStorage.setItem("refreshToken", data.refreshToken);
+          dispatch(setCredentials(data));
           router.replace(`/${data.user.role}/dashboard`);
         })
         .catch((error) => {

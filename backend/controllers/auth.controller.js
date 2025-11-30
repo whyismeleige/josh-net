@@ -318,9 +318,26 @@ exports.sendOTP = async (req, res) => {
       });
     }
 
+    const conditions = [];
+
+    if (req.body?.email) {
+      conditions.push({ email: req.body.email });
+    }
+
+    if (req.body?.number) {
+      conditions.push({ phone: req.body.number });
+    }
+
+    if (conditions.length === 0) {
+      // Handle case where neither email nor number provided
+      return res
+        .status(400)
+        .send({ message: "Email or phone required", type: "error" });
+    }
+
     // Find user by email or phone number
     const user = await User.findOne({
-      $or: [{ email: req.body?.email }, { phone: req.body?.number }],
+      $or: conditions,
     });
 
     if (!user) {
@@ -398,7 +415,7 @@ exports.verifyOTP = async (req, res) => {
 
     // OTP Verification done in OTP Model
     const { user_id, purpose } = await OTP.verifyOTP(verificationId, otp);
-    
+
     // Delete Session after Finding it
     await OTP.findByIdAndDelete(verificationId);
 
@@ -433,6 +450,7 @@ exports.verifyOTP = async (req, res) => {
       return res.status(200).send({
         message: "User Logged In Successfully",
         type: "success",
+        user: sanitizeUser(user),
         accessToken,
         refreshToken,
       });
@@ -560,12 +578,30 @@ exports.refreshToken = async (req, res) => {
 
     const accessToken = createAccessToken({ id: user._id, role: user.role });
 
-    res.json({
+    res.status(200).json({
+      message: "Token Changed",
+      type: "success",
       accessToken,
     });
+    
   } catch (error) {
     console.error("Refresh Token error", error);
     res.status(403).send({ message: "Invalid Refresh Token", type: "error" });
+  }
+};
+
+exports.getProfile = async (req, res) => {
+  try {
+    res.status(200).send({
+      user: sanitizeUser(req.user),
+      message: "User Profile Sent",
+      type: "success",
+    });
+  } catch (error) {
+    res.status(500).send({
+      message: "Error fetching User Data",
+      type: "error",
+    });
   }
 };
 

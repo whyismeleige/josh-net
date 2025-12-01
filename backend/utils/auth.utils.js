@@ -65,10 +65,10 @@ const sanitizeUser = (user) => {
     role: user.role,
     avatarURL: user.avatarURL,
     profile: {
-      userName: user.profile.userName,
+      userName: user.profile?.userName,
     },
     activity: {
-      lastLogin: user.activity.lastLogin,
+      lastLogin: user.activity?.lastLogin,
     },
     security: {
       twoFactorEnabled: user.security.twoFactorEnabled,

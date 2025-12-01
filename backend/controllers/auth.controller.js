@@ -598,6 +598,7 @@ exports.getProfile = async (req, res) => {
       type: "success",
     });
   } catch (error) {
+    console.log("This is the error", error);
     res.status(500).send({
       message: "Error fetching User Data",
       type: "error",

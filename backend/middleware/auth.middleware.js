@@ -1,8 +1,8 @@
 const { decodeAccessToken } = require("../utils/auth.utils");
 const User = require("../models").user;
+const redisClient = require("../database/redis");
 
 exports.authenticateToken = async (req, res, next) => {
-  
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
 
@@ -15,16 +15,24 @@ exports.authenticateToken = async (req, res, next) => {
 
   try {
     const { id } = decodeAccessToken(token);
-    const user = await User.findById(id);
+
+    let user = await redisClient.get(id);
 
     if (!user) {
+      user = await User.findById(id);
+      await redisClient.setEx(id, 60 * 60 * 2, JSON.stringify(user));
+    }
+
+    if (!user) {
+      await redisClient.del(id);
       return res.status(400).send({
         message: "User Not Found",
         type: "error",
       });
     }
 
-    req.user = user;
+    req.user = JSON.parse(user);
+    
     next();
   } catch (error) {
     return res.status(403).send({

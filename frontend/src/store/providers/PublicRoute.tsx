@@ -14,7 +14,7 @@ export default function PublicRoute({ children }: { children: ReactNode }) {
  
   useEffect(() => {
     dispatch(verifyAuth());
-  }, []);
+  }, [dispatch]);
 
   useEffect(() => {
     if (!isLoading && isAuthenticated && user) {

@@ -10,9 +10,10 @@
  * Student Login Sub-Pages contain external marks data and all that essential for us.
  * Faculty Login Sub-Pages contain viable info for all the students which is important for JOSH-Net.
  */
-
+require("dotenv").config();
 const axios = require("axios");
 const cheerio = require("cheerio");
+const { MongoClient } = require("mongodb");
 const fs = require("fs");
 const { HttpsProxyAgent } = require("https-proxy-agent");
 
@@ -115,6 +116,84 @@ class BaseScraper {
       console.error("Error getting session", error.message);
       return false;
     }
+  }
+
+  async _getStudentIds(filters = {}) {
+    try {
+      console.log("Getting Hall Tickets from Database....");
+
+      const agg = [
+        {
+          $match: filters,
+        },
+        {
+          $group: {
+            _id: null,
+            ids: { $push: "$academic.studentId" },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            ids: 1,
+          },
+        },
+      ];
+
+      const client = await MongoClient.connect(process.env.MONGO_URI);
+
+      const collection = client.db("college_database").collection("users");
+      const cursor = collection.aggregate(agg);
+      const result = await cursor.toArray();
+      await client.close();
+
+      return result[0].ids;
+    } catch (error) {
+      console.error(
+        "Error getting students halltickets from DB",
+        error.message
+      );
+      return false;
+    }
+  }
+
+  async _saveData(data, options = {}) {
+    try {
+      console.log("Saving the Data of the session into DB...");
+
+      const dbName =
+        options.dbName || process.env.DB_NAME || "college_database";
+      const collectionName =
+        options.collectionName || `scrap-session-${new Date().toISOString()}`;
+
+      const client = await MongoClient.connect(process.env.MONGO_URI);
+      const collection = client.db(dbName).collection(collectionName);
+
+      const result = await collection.insertMany(data);
+      console.log(result);
+      console.log(
+        `Inserted ${result.insertedCount} Documents in Collection: ${collectionName}`
+      );
+      return true;
+    } catch (error) {
+      console.log("Error in Saving Data", error);
+      return false;
+    }
+  }
+
+  _saveResults(results, errors, filename) {
+    const output = {
+      summary: {
+        total: results.length + errors.length,
+        successful: results.length,
+        failed: errors.length,
+        generatedAt: new Date().toISOString(),
+      },
+      data: results,
+      errors: errors,
+    };
+
+    fs.writeFileSync(filename, JSON.stringify(output, null, 2));
   }
 }
 
@@ -282,7 +361,66 @@ class StudentScraper extends BaseScraper {
     }
   }
 
-  async getOverallResults(monthYear = "OCT/NOV-2025") {
+  async #studentLogin(hallTicketNo, password) {
+    try {
+      console.log("\nLogging in via Student Credentials");
+
+      const params = new URLSearchParams();
+      params.append("txtHallticketNo", hallTicketNo);
+      params.append("txtPassword", password);
+
+      const response = await this._makeRequest({
+        method: "POST",
+        url: "/StudentLogin/StudentLoginVerify",
+        headers: {
+          Cookie: this.sessionCookie,
+          "Content-Type": "application/x-www-form-urlencoded",
+          Accept:
+            "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          Origin: this.baseURL,
+          referer: `${this._baseURL}/StudentLogin/StudentLoginPage`,
+          "Cache-Control": "max-age=0",
+          "Sec-Fetch-Dest": "document",
+          "Sec-Fetch-Mode": "navigate",
+          "Sec-Fetch-Site": "same-origin",
+          "Sec-Fetch-User": "?1",
+          "Upgrade-Insecure-Requests": "1",
+        },
+        data: params.toString(),
+        maxRedirects: 0, // Don't follow redirects automatically
+        validateStatus: (status) => status >= 200 && status < 400,
+      });
+
+      if (response.status === 302 || response.status === 301) {
+        console.log("✓ Student login successful");
+        const redirectUrl = response.headers["location"];
+        console.log("  Redirect to:", redirectUrl);
+        return { success: true, redirectUrl };
+      } else if (response.status === 200) {
+        // Check if we're still on login page (login failed)
+        const $ = cheerio.load(response.data);
+        const errorMsg = $(".error, .alert-danger, .validation-summary-errors")
+          .text()
+          .trim();
+
+        if (errorMsg) {
+          console.error("✗ Student login failed:", errorMsg);
+          return { success: false, error: errorMsg };
+        }
+
+        // If no error message but still on page, assume credentials are wrong
+        console.error("✗ Student login failed: Invalid credentials");
+        return { success: false, error: "Invalid credentials" };
+      }
+
+      return { success: false, error: "Unknown response" };
+    } catch (error) {
+      console.log("Error in Login via Student Credentials", error);
+      return null;
+    }
+  }
+
+  async #getOverallResults(monthYear = "OCT/NOV-2025") {
     try {
       console.log(`\nFetching overall result for ${monthYear}...`);
       const response = await this._makeRequest({
@@ -437,10 +575,13 @@ class StudentScraper extends BaseScraper {
     }
   }
 
-  async getCompleteStudentData(hallTicketNo) {
+  async getCompleteStudentData(hallTicketNo, options = {}) {
     console.log("\n" + "=".repeat(60));
     console.log(`Processing: ${hallTicketNo}`);
     console.log("=".repeat(60));
+
+    const authenticationRequired = options.authenticationRequired;
+    const password = options.password;
 
     // Step 1: Get session
     const sessionSuccess = await this._getSessionCookie();
@@ -448,53 +589,108 @@ class StudentScraper extends BaseScraper {
       return { error: "Failed to get session", hallTicketNo };
     }
 
-    // Step 2: Validate hall ticket
-    const validation = await this.#validateHallTicket(hallTicketNo);
+    // Step 2: Validate hall ticket or Authentication of User
+    let validation;
+
+    if (authenticationRequired) {
+      if (!password)
+        return { error: "Password Required for Authorization", hallTicketNo };
+      validation = await this.#studentLogin(hallTicketNo, password);
+    } else {
+      validation = await this.#validateHallTicket(hallTicketNo);
+    }
+
     if (!validation) {
       return { error: "Invalid hall ticket", hallTicketNo };
     }
 
-    const data = await this.getOverallResults();
-
-    return data;
     // Step 3: Get student profile
-    // const studentProfile = await this.#getStudentProfile();
-    // if (!studentProfile) {
-    //   return { error: "Failed to get profile", hallTicketNo };
-    // }
+    const studentProfile = await this.#getStudentProfile();
+    if (!studentProfile) {
+      return { error: "Failed to get profile", hallTicketNo };
+    }
 
-    // // Step 4: Get attendance
-    // const attendance = await this.#getAttendanceData(
-    //   studentProfile.admissionNumber,
-    //   studentProfile.semesterFKey
-    // );
+    // Step 4: Get attendance
+    const attendance = await this.#getAttendanceData(
+      studentProfile.admissionNumber,
+      studentProfile.semesterFKey
+    );
 
-    // // Step 5: Get marks
-    // const marks = await this.#getMarksData(
-    //   studentProfile.admissionNumberPKey,
-    //   studentProfile.semesterFKey
-    // );
+    // Step 5: Get marks
+    const marks = await this.#getMarksData(
+      studentProfile.admissionNumberPKey,
+      studentProfile.semesterFKey
+    );
 
-    // // Compile complete data
-    // const completeData = {
-    //   hallTicketNo: hallTicketNo,
-    //   student: studentProfile,
-    //   attendance: attendance,
-    //   marks: marks,
-    //   yearFkey: validation.yearFkey,
-    //   extractedAt: new Date().toISOString(),
-    // };
+    // Compile complete data
+    const completeData = {
+      hallTicketNo: hallTicketNo,
+      student: studentProfile,
+      attendance: attendance,
+      marks: marks,
+      yearFkey: validation.yearFkey,
+      extractedAt: new Date().toISOString(),
+    };
 
-    // console.log("✓ Data extraction complete for " + hallTicketNo);
+    console.log("✓ Data extraction complete for " + hallTicketNo);
 
-    // return completeData;
+    return completeData;
+  }
+
+  async extractExternalMarks(hallTicketNo, options = {}) {
+    console.log("\n" + "=".repeat(60));
+    console.log(`Processing: ${hallTicketNo}`);
+    console.log("=".repeat(60));
+
+    const authenticationRequired = options.authenticationRequired;
+    const password = options.password;
+
+    // Step 1: Get session
+    const sessionSuccess = await this._getSessionCookie();
+    if (!sessionSuccess) {
+      return { error: "Failed to get session", hallTicketNo };
+    }
+
+    // Step 2: Validate hall ticket or Authentication of User
+    let validation;
+
+    if (authenticationRequired) {
+      if (!password)
+        return { error: "Password Required for Authorization", hallTicketNo };
+      validation = await this.#studentLogin(hallTicketNo, password);
+    } else {
+      validation = await this.#validateHallTicket(hallTicketNo);
+    }
+
+    if (!validation) {
+      return { error: "Invalid hall ticket", hallTicketNo };
+    }
+
+    // Step 3: Extract External Marks
+    const results = await this.#getOverallResults();
+
+    return results;
   }
 
   async processBatch(hallTickets, options = {}) {
     const results = [];
     const errors = [];
-    const outputFile = options.outputFile || 'batch_student_data.json';
+    const outputFile = options.outputFile || "batch_student_data.json";
     const continueOnError = options.continueOnError !== false;
+
+    const extractionFunction =
+      options.extractionFunction || "getCompleteStudentData";
+
+    const functionMap = {
+      getCompleteStudentData: this.getCompleteStudentData.bind(this),
+      extractExternalMarks: this.extractExternalMarks.bind(this),
+    };
+
+    const extractFunction = functionMap[extractionFunction];
+
+    if (!extractFunction) {
+      throw new Error(`Invalid Extraction Function: ${extractionFunction}`);
+    }
 
     console.log("\n" + "█".repeat(60));
     console.log(`BATCH PROCESSING: ${hallTickets.length} students`);
@@ -508,17 +704,17 @@ class StudentScraper extends BaseScraper {
       );
 
       try {
-        const data = await this.getCompleteStudentData(hallTicket);
+        const data = await extractFunction(hallTicket, options);
 
         if (data.error) {
           errors.push(data);
           console.error(`✗ Failed: ${data.error}`);
         } else {
           results.push(data);
-          // console.log(`✓ Success: ${data.student.name}`);
+          console.log(`✓ Success: ${data.student.name}`);
         }
 
-        this.saveResults(results, errors, outputFile);
+        this._saveResults(results, errors, outputFile);
       } catch (error) {
         console.error(`✗ Unexpected error for ${hallTicket}:`, error.message);
         errors.push({ hallTicketNo: hallTicket, error: error.message });
@@ -549,20 +745,177 @@ class StudentScraper extends BaseScraper {
 
     return { results, errors };
   }
+}
 
-  saveResults(results, errors, filename) {
-    const output = {
-      summary: {
-        total: results.length + errors.length,
-        successful: results.length,
-        failed: errors.length,
-        generatedAt: new Date().toISOString(),
-      },
-      students: results,
-      errors: errors,
-    };
+class FacultyScraper extends BaseScraper {
+  constructor(options = {}) {
+    super(options);
+  }
 
-    fs.writeFileSync(filename, JSON.stringify(output, null, 2));
+  async facultyLogin(username, password) {
+    try {
+      console.log("Admin Login: Authenticating...");
+
+      // First get session cookie from login page
+      const loginPageResponse = await this._makeRequest({
+        method: "GET",
+        url: "/Home/Login",
+      });
+
+      const cookies = loginPageResponse.headers["set-cookie"];
+      if (cookies) {
+        const sessionCookie = cookies.find((c) =>
+          c.includes("ASP.NET_SessionId")
+        );
+        if (sessionCookie) {
+          this.sessionCookie = sessionCookie.split(";")[0];
+        }
+      }
+
+      // Prepare form data
+      const formData = new URLSearchParams();
+      formData.append("UserName", username);
+      formData.append("Password", password);
+
+      const response = await this._makeRequest({
+        method: "POST",
+        url: "/Home/Login",
+        data: formData.toString(),
+        headers: {
+          Cookie: this.sessionCookie,
+          "Content-Type": "application/x-www-form-urlencoded",
+          Accept:
+            "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          Origin: this.baseURL,
+          Referer: `${this.baseURL}/Home/Login`,
+          "Cache-Control": "max-age=0",
+          "Sec-Fetch-Dest": "document",
+          "Sec-Fetch-Mode": "navigate",
+          "Sec-Fetch-Site": "same-origin",
+          "Sec-Fetch-User": "?1",
+          "Upgrade-Insecure-Requests": "1",
+        },
+        maxRedirects: 0, // Don't follow redirects automatically
+        validateStatus: (status) => status >= 200 && status < 400,
+      });
+
+      if (response.status === 302 || response.status === 301) {
+        console.log("✓ Admin login successful");
+        const redirectUrl = response.headers["location"];
+        console.log("  Redirect to:", redirectUrl);
+        return { success: true, redirectUrl };
+      } else if (response.status === 200) {
+        // Check if we're still on login page (login failed)
+        const $ = cheerio.load(response.data);
+        const errorMsg = $(".error, .alert-danger, .validation-summary-errors")
+          .text()
+          .trim();
+
+        if (errorMsg) {
+          console.error("✗ Admin login failed:", errorMsg);
+          return { success: false, error: errorMsg };
+        }
+
+        // If no error message but still on page, assume credentials are wrong
+        console.error("✗ Admin login failed: Invalid credentials");
+        return { success: false, error: "Invalid credentials" };
+      }
+
+      return { success: false, error: "Unknown response" };
+    } catch (error) {
+      console.error("✗ Error during admin login:", error.message);
+      return { success: false, error: error.message };
+    }
+  }
+
+  async chooseGraduation(id) {
+    try {
+      if (id !== "1" && id !== "2") {
+        return {
+          success: false,
+          error: "Select between Under Graduation (1) or Post Graduation (2)",
+        };
+      }
+
+      await this._makeRequest({
+        method: "GET",
+        url: "/Home/GraduationSelection",
+        headers: {
+          Cookie: this._sessionCookie,
+          Referer: `${this._baseURL}/Home/GraduationSelection`,
+        },
+      });
+
+      const response = await this._makeRequest({
+        method: "GET",
+        url: "/Home/ChangeGraduation",
+        params: {
+          graduationId: id,
+        },
+        headers: {
+          Cookie: this._sessionCookie,
+          "X-Requested-With": "XMLHttpRequest",
+          Referer: `${this._baseURL}/Home/ChangeGraduation`,
+          Accept: "*/*",
+        },
+      });
+
+      const data = response.data;
+
+      console.log(data);
+
+      return data;
+    } catch (error) {
+      console.error("✗ Error during Graduation Selection:", error.message);
+      return { success: false, error: error.message };
+    }
+  }
+
+  async getYearWiseStudentDetails() {
+    try {
+      console.log("Fetching Year Wise Student Data");
+      const response = await this._makeRequest({
+        method: "GET",
+        url: "/StudentDetails/GetStudentDetails",
+        headers: {
+          Cookie: this._sessionCookie,
+          Referer: `${this._baseURL}/StudentDetails/GetStudentDetails`,
+          Accept:
+            "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        },
+      });
+
+      const $ = cheerio.load(response.data);
+
+      const selectData = $("#AcademicYearFKey option")
+        .map((i, el) => $(el).text().trim())
+        .get();
+
+      console.log(selectData);
+    } catch (error) {
+      console.error(
+        "Error in getting Year-Wise Student Details",
+        error.message
+      );
+      return { success: false, error: error.message };
+    }
+  }
+
+  async test() {
+    // Step 1 - Authenticating into Faculty Page
+    const auth = await this.facultyLogin("sandya", "sandya@123");
+    if (auth.error) {
+      console.error("Error in Auth", auth.error);
+    }
+
+    // Step 2 - Selecting Graduation - UG or PG (UG - 1, PG - 2)
+    const choice = await this.chooseGraduation("1");
+    if (choice.error) {
+      console.error("Error in Choosing", choice.error);
+    }
+
+    // Step 3 - Get Student Details from Tab
+    await this.getYearWiseStudentDetails();
   }
 }
 
@@ -572,71 +925,10 @@ async function main() {
     delay: 2000,
   };
 
-  const scraper = new StudentScraper(config);
-
-  const hallTickets = [
-    "121423408001",
-    "121423408002",
-    "121423408003",
-    "121423408004",
-    "121423408005",
-    "121423408006",
-    "121423408008",
-    "121423408009",
-    "121423408010",
-    "121423408011",
-    "121423408012",
-    "121423408013",
-    "121423408014",
-    "121423408015",
-    "121423408016",
-    "121423408017",
-    "121423408018",
-    "121423408019",
-    "121423408020",
-    "121423408021",
-    "121423408023",
-    "121423408024",
-    "121423408025",
-    "121423408026",
-    "121423408027",
-    "121423408028",
-    "121423408029",
-    "121423408030",
-    "121423408031",
-    "121423408033",
-    "121423408034",
-    "121423408035",
-    "121423408036",
-    "121423408037",
-    "121423408038",
-    "121423408039",
-    "121423408040",
-    "121423408041",
-    "121423408042",
-    "121423408044",
-    "121423408045",
-    "121423408046",
-    "121423408047",
-    "121423408048",
-    "121423408050",
-    "121423408051",
-    "121423408052",
-    "121423408053",
-    "121423408054",
-    "121423408055",
-    "121423408056",
-    "121423408057",
-    "121423408058",
-    "121423408059",
-    "121423408060",
-  ];
-
-  const batchOptions = {
-    continueOnError: true,
-  };
-
-  await scraper.processBatch(hallTickets, batchOptions);
+  const scraper = new FacultyScraper(config);
+  await scraper.test();
 }
 
 main().catch(console.error);
+
+module.exports = { FacultyScraper, StudentScraper };

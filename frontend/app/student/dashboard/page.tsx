@@ -1,3 +1,5 @@
-export default function Dashboard() {
-  return <div>This is the dashboard</div>;
+import StudentSidebar from "@/src/components/pages/Student/sidebar";
+
+export default function Page() {
+  return <StudentSidebar />;
 }

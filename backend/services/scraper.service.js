@@ -745,6 +745,22 @@ class StudentScraper extends BaseScraper {
 
     return { results, errors };
   }
+
+  async saveEntireMarks() {
+    const tickets = await this._getStudentIds();
+
+    const data = await this.processBatch(tickets, {
+      extractionFunction: "extractExternalMarks",
+    });
+
+    await this._saveData(data.results, {
+      collectionName: `Results-Entire-Marks-OCT/NOV-2025`,
+    });
+
+    await this._saveData(data.errors, {
+      collectionName: `Errors-Entire-Marks-OCT/NOV-2025`,
+    });
+  }
 }
 
 class FacultyScraper extends BaseScraper {
@@ -925,8 +941,9 @@ async function main() {
     delay: 2000,
   };
 
-  const scraper = new FacultyScraper(config);
-  await scraper.test();
+  const scraper = new StudentScraper(config);
+
+  await scraper.saveEntireMarks();
 }
 
 main().catch(console.error);

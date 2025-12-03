@@ -1,9 +1,9 @@
 {
   "summary": {
-    "total": 46,
-    "successful": 46,
+    "total": 50,
+    "successful": 50,
     "failed": 0,
-    "generatedAt": "2025-12-03T17:16:49.272Z"
+    "generatedAt": "2025-12-03T17:17:33.339Z"
   },
   "data": [
     {
@@ -3380,6 +3380,286 @@
             }
           ],
           "sgpa": "8.00",
+          "cgpa": null,
+          "result": "PASS"
+        }
+      ],
+      "totalSubjects": 6
+    },
+    {
+      "monthYear": "OCT/NOV-2025",
+      "student": {
+        "name": "KADYN LEON BURBY",
+        "fatherName": "LEON PATRICK BURBY",
+        "motherName": "REBECCA LEON BURBY",
+        "hallTicket": "121425406016",
+        "program": "BBA GENERAL",
+        "monthYear": "OCT/NOV-2025"
+      },
+      "semesters": [
+        {
+          "semester": "SEMESTER-I(REGULAR)",
+          "subjects": [
+            {
+              "courseCode": "ENG-1-EN-22T",
+              "courseTitle": "ENGLISH - I",
+              "credits": 5,
+              "grade": "A",
+              "result": "PASS",
+              "monthYear": "OCT/NOV-2025"
+            },
+            {
+              "courseCode": "FR-1-SL-24T",
+              "courseTitle": "SECOND LANGUAGE",
+              "credits": 4,
+              "grade": "B+",
+              "result": "PASS",
+              "monthYear": "OCT/NOV-2025"
+            },
+            {
+              "courseCode": "PMB-1-BM-22T",
+              "courseTitle": "PRINCIPLES OF MANAGEMENT & ORGANIZATION BEHAVIOR",
+              "credits": 5,
+              "grade": "A",
+              "result": "PASS",
+              "monthYear": "OCT/NOV-2025"
+            },
+            {
+              "courseCode": "FBE-1-BM-22T",
+              "courseTitle": "FUNDAMENTALS OF BUSINESS ECONOMICS",
+              "credits": 5,
+              "grade": "A+",
+              "result": "PASS",
+              "monthYear": "OCT/NOV-2025"
+            },
+            {
+              "courseCode": "EIT-1-CS-22T",
+              "courseTitle": "ELEMENTS OF INFORMATION TECHNOLOGY (T+P)",
+              "credits": 5,
+              "grade": "A+",
+              "result": "PASS",
+              "monthYear": "OCT/NOV-2025"
+            },
+            {
+              "courseCode": "DSP-1-CS-25T",
+              "courseTitle": "DIGITAL SKILLS FOR PROFESSIONALS",
+              "credits": 2,
+              "grade": "O",
+              "result": "PASS",
+              "monthYear": "OCT/NOV-2025"
+            }
+          ],
+          "sgpa": "8.38",
+          "cgpa": null,
+          "result": "PASS"
+        }
+      ],
+      "totalSubjects": 6
+    },
+    {
+      "monthYear": "OCT/NOV-2025",
+      "student": {
+        "name": "PRATEEK RATHI",
+        "fatherName": "RAJESH KUMAR RATHI",
+        "motherName": "SUNITA RATHI",
+        "hallTicket": "121425406021",
+        "program": "BBA GENERAL",
+        "monthYear": "OCT/NOV-2025"
+      },
+      "semesters": [
+        {
+          "semester": "SEMESTER-I(REGULAR)",
+          "subjects": [
+            {
+              "courseCode": "ENG-1-EN-22T",
+              "courseTitle": "ENGLISH - I",
+              "credits": 5,
+              "grade": "A+",
+              "result": "PASS",
+              "monthYear": "OCT/NOV-2025"
+            },
+            {
+              "courseCode": "HI-1-SL-24T",
+              "courseTitle": "SECOND LANGUAGE",
+              "credits": 4,
+              "grade": "A+",
+              "result": "PASS",
+              "monthYear": "OCT/NOV-2025"
+            },
+            {
+              "courseCode": "PMB-1-BM-22T",
+              "courseTitle": "PRINCIPLES OF MANAGEMENT & ORGANIZATION BEHAVIOR",
+              "credits": 5,
+              "grade": "A+",
+              "result": "PASS",
+              "monthYear": "OCT/NOV-2025"
+            },
+            {
+              "courseCode": "FBE-1-BM-22T",
+              "courseTitle": "FUNDAMENTALS OF BUSINESS ECONOMICS",
+              "credits": 5,
+              "grade": "O",
+              "result": "PASS",
+              "monthYear": "OCT/NOV-2025"
+            },
+            {
+              "courseCode": "EIT-1-CS-22T",
+              "courseTitle": "ELEMENTS OF INFORMATION TECHNOLOGY (T+P)",
+              "credits": 5,
+              "grade": "A+",
+              "result": "PASS",
+              "monthYear": "OCT/NOV-2025"
+            },
+            {
+              "courseCode": "DSP-1-CS-25T",
+              "courseTitle": "DIGITAL SKILLS FOR PROFESSIONALS",
+              "credits": 2,
+              "grade": "A+",
+              "result": "PASS",
+              "monthYear": "OCT/NOV-2025"
+            }
+          ],
+          "sgpa": "9.19",
+          "cgpa": null,
+          "result": "PASS"
+        }
+      ],
+      "totalSubjects": 6
+    },
+    {
+      "monthYear": "OCT/NOV-2025",
+      "student": {
+        "name": "NADIA BANU",
+        "fatherName": "MOHAMMED AMEEN",
+        "motherName": "MUNIRA BANU",
+        "hallTicket": "121425406027",
+        "program": "BBA GENERAL",
+        "monthYear": "OCT/NOV-2025"
+      },
+      "semesters": [
+        {
+          "semester": "SEMESTER-I(REGULAR)",
+          "subjects": [
+            {
+              "courseCode": "ENG-1-EN-22T",
+              "courseTitle": "ENGLISH - I",
+              "credits": 5,
+              "grade": "A+",
+              "result": "PASS",
+              "monthYear": "OCT/NOV-2025"
+            },
+            {
+              "courseCode": "AR-1-SL-24T",
+              "courseTitle": "SECOND LANGUAGE",
+              "credits": 4,
+              "grade": "A+",
+              "result": "PASS",
+              "monthYear": "OCT/NOV-2025"
+            },
+            {
+              "courseCode": "PMB-1-BM-22T",
+              "courseTitle": "PRINCIPLES OF MANAGEMENT & ORGANIZATION BEHAVIOR",
+              "credits": 5,
+              "grade": "A",
+              "result": "PASS",
+              "monthYear": "OCT/NOV-2025"
+            },
+            {
+              "courseCode": "FBE-1-BM-22T",
+              "courseTitle": "FUNDAMENTALS OF BUSINESS ECONOMICS",
+              "credits": 5,
+              "grade": "O",
+              "result": "PASS",
+              "monthYear": "OCT/NOV-2025"
+            },
+            {
+              "courseCode": "EIT-1-CS-22T",
+              "courseTitle": "ELEMENTS OF INFORMATION TECHNOLOGY (T+P)",
+              "credits": 5,
+              "grade": "A+",
+              "result": "PASS",
+              "monthYear": "OCT/NOV-2025"
+            },
+            {
+              "courseCode": "DSP-1-CS-25T",
+              "courseTitle": "DIGITAL SKILLS FOR PROFESSIONALS",
+              "credits": 2,
+              "grade": "O",
+              "result": "PASS",
+              "monthYear": "OCT/NOV-2025"
+            }
+          ],
+          "sgpa": "9.08",
+          "cgpa": null,
+          "result": "PASS"
+        }
+      ],
+      "totalSubjects": 6
+    },
+    {
+      "monthYear": "OCT/NOV-2025",
+      "student": {
+        "name": "GAJJALA NIDHI REDDY",
+        "fatherName": "G PRABHAKAR REDDY",
+        "motherName": "G VANAJA",
+        "hallTicket": "121425406046",
+        "program": "BBA GENERAL",
+        "monthYear": "OCT/NOV-2025"
+      },
+      "semesters": [
+        {
+          "semester": "SEMESTER-I(REGULAR)",
+          "subjects": [
+            {
+              "courseCode": "ENG-1-EN-22T",
+              "courseTitle": "ENGLISH - I",
+              "credits": 5,
+              "grade": "A+",
+              "result": "PASS",
+              "monthYear": "OCT/NOV-2025"
+            },
+            {
+              "courseCode": "SK-1-SL-24T",
+              "courseTitle": "SECOND LANGUAGE",
+              "credits": 4,
+              "grade": "A+",
+              "result": "PASS",
+              "monthYear": "OCT/NOV-2025"
+            },
+            {
+              "courseCode": "PMB-1-BM-22T",
+              "courseTitle": "PRINCIPLES OF MANAGEMENT & ORGANIZATION BEHAVIOR",
+              "credits": 5,
+              "grade": "A",
+              "result": "PASS",
+              "monthYear": "OCT/NOV-2025"
+            },
+            {
+              "courseCode": "FBE-1-BM-22T",
+              "courseTitle": "FUNDAMENTALS OF BUSINESS ECONOMICS",
+              "credits": 5,
+              "grade": "A+",
+              "result": "PASS",
+              "monthYear": "OCT/NOV-2025"
+            },
+            {
+              "courseCode": "EIT-1-CS-22T",
+              "courseTitle": "ELEMENTS OF INFORMATION TECHNOLOGY (T+P)",
+              "credits": 5,
+              "grade": "A+",
+              "result": "PASS",
+              "monthYear": "OCT/NOV-2025"
+            },
+            {
+              "courseCode": "DSP-1-CS-25T",
+              "courseTitle": "DIGITAL SKILLS FOR PROFESSIONALS",
+              "credits": 2,
+              "grade": "O",
+              "result": "PASS",
+              "monthYear": "OCT/NOV-2025"
+            }
+          ],
+          "sgpa": "8.88",
           "cgpa": null,
           "result": "PASS"
         }

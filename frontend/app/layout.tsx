@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Providers } from "@/src/store/providers";
 import { NotificationContainer } from "@/src/components/shared/Notification/NotificationContainer";
+import { StudentProvider } from "@/src/context/student.provider";
 
 export const metadata: Metadata = {
   title: "Josh-Net",
@@ -17,8 +18,9 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body>
         <Providers>
-          {children}
-          <NotificationContainer />
+
+            {children}
+            <NotificationContainer />
         </Providers>
       </body>
     </html>

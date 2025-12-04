@@ -1,5 +1,12 @@
-import StudentSidebar from "@/src/components/pages/Student/sidebar";
+import StudentDashboard from "@/src/components/pages/Student/Dashboard";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Student's Dashboard"
+}
 
 export default function Page() {
-  return <StudentSidebar />;
+  return (
+    <StudentDashboard/>
+  );
 }

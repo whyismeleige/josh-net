@@ -23,15 +23,25 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useAppSelector } from "@/src/hooks/redux";
+import { SiChatbot } from "@icons-pack/react-simple-icons";
 import {
+  BarChart,
   Bell,
+  BookPlus,
+  Bot,
   Building,
   CreditCard,
   Database,
   DotSquare,
+  EllipsisVertical,
+  HelpCircle,
   LogOut,
+  Search,
+  Server,
+  Settings,
   UserCircle,
 } from "lucide-react";
+import Link from "next/link";
 
 const items = [
   {
@@ -39,11 +49,55 @@ const items = [
     icon: Database,
     href: "/student/dashboard",
   },
+  {
+    title: "Materials",
+    icon: BookPlus,
+    href: "/student/materials",
+  },
+  {
+    title: "Attendance",
+    icon: BarChart,
+    href: "/student/attendance",
+  },
+  {
+    title: "Server",
+    icon: Server,
+    href: "/student/server",
+  },
+  {
+    title: "Josephine",
+    icon: Bot,
+    href: "/student/josephine",
+  },
+];
+
+const footerItems = [
+  {
+    title: "Settings",
+    icon: Settings,
+    href: "/settings",
+  },
+  {
+    title: "Get Help",
+    icon: HelpCircle,
+    href: "/help",
+  },
+  {
+    title: "Search",
+    icon: Search,
+    href: "/search",
+  },
 ];
 
 export default function StudentSidebar() {
-  const { user } = useAppSelector((state) => state.auth);
+  // const { user } = useAppSelector((state) => state.auth);
   const { isMobile } = useSidebar();
+
+  const user = {
+    name: "Piyush Jain",
+    email: "121423408006@josephscollege.ac.in",
+    avatarURL: "https://api.dicebear.com/9.x/pixel-art/svg",
+  };
 
   return (
     <Sidebar collapsible="icon">
@@ -68,9 +122,11 @@ export default function StudentSidebar() {
             <SidebarMenu>
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton tooltip={item.title}>
-                    {item.icon && <item.icon />}
-                    <span>{item.title}</span>
+                  <SidebarMenuButton asChild tooltip={item.title}>
+                    <Link href={item.href}>
+                      {item.icon && <item.icon />}
+                      <span>{item.title}</span>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -80,13 +136,13 @@ export default function StudentSidebar() {
         <SidebarGroup className="mt-auto">
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => (
+              {footerItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <a href={item.href}>
+                    <Link href={item.href}>
                       <item.icon />
                       <span>{item.title}</span>
-                    </a>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -101,9 +157,9 @@ export default function StudentSidebar() {
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton
                   size="lg"
-                  className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                  className="data-[state=open]:bg-sidebar-accent cursor-pointer data-[state=open]:text-sidebar-accent-foreground"
                 >
-                  <Avatar className="h-8 w-8 rounded-lg grayscale">
+                  <Avatar className="h-8 w-8 rounded-lg">
                     <AvatarImage src={user?.avatarURL} alt={user?.name} />
                     <AvatarFallback className="rounded-lg">CN</AvatarFallback>
                   </Avatar>
@@ -113,7 +169,7 @@ export default function StudentSidebar() {
                       {user?.email}
                     </span>
                   </div>
-                  <DotSquare className="ml-auto size-4" />
+                  <EllipsisVertical className="ml-auto size-4" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent

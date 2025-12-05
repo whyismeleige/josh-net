@@ -8,6 +8,7 @@ const app = express();
 const PORT = process.env.PORT || 8080;
 
 const authRoutes = require("./routes/auth.routes");
+const studentRoutes = require("./routes/student.routes");
 
 // Middleware
 app.use(
@@ -23,6 +24,7 @@ app.use(express.urlencoded({ extended: true }));
 connectDB();
 
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/student", studentRoutes);
 
 // Health check route
 app.get("/health", (req, res) => {

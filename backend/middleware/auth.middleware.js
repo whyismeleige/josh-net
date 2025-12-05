@@ -32,7 +32,7 @@ exports.authenticateToken = async (req, res, next) => {
     }
 
     req.user = JSON.parse(user);
-    
+
     next();
   } catch (error) {
     return res.status(403).send({
@@ -43,6 +43,7 @@ exports.authenticateToken = async (req, res, next) => {
 };
 
 exports.authorizeRoles = (...roles) => {
+  console.log("These are the roles", roles);
   return (req, res, next) => {
     if (!roles.includes(req.user.role)) {
       return res.status(403).send({

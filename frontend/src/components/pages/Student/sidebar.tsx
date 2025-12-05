@@ -100,7 +100,7 @@ export default function StudentSidebar() {
   };
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>

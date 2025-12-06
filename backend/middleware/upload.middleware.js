@@ -17,23 +17,57 @@ const upload = multer({
       });
     },
     key: (req, file, cb) => {
-      const fileName = `${file.originalname}`;
+      const fileName = req.query.path
+        ? `${req.query.path}/${file.originalname}`
+        : file.originalname;
       cb(null, fileName);
     },
   }),
+  limits: {
+    fileSize: 100 * 1024 * 1024,
+  },
 });
 
-const uploadWithFolder = multer({
+const uploadToDynamicBucket = (bucketName) => {
+  return multer({
+    storage: multerS3({
+      s3: s3Client,
+      bucket: bucketName,
+      contentType: multerS3.AUTO_CONTENT_TYPE,
+      key: (req, file, cb) => {
+        cb(null, file.originalname);
+      },
+    }),
+  });
+};
+
+const uploadForDownload = multer({
   storage: multerS3({
     s3: s3Client,
     bucket: BUCKET_NAME,
     contentType: multerS3.AUTO_CONTENT_TYPE,
+    contentDisposition: "attachment",
     key: (req, file, cb) => {
-      const folder = req.params.folder || "upload";
-      const fileName = `${folder}/${file.originalname}`;
-      cb(null, fileName);
-    }, 
+      cb(null, file.originalname);
+    },
   }),
 });
 
-module.exports = { upload, uploadWithFolder };
+const uploadEncrypted = multer({
+  storage: multerS3({
+    s3: s3Client,
+    bucket: BUCKET_NAME,
+    contentType: multerS3.AUTO_CONTENT_TYPE,
+    serverSideEncryption: "AES256",
+    key: (req, file, cb) => {
+      cb(null, `secure/${file.originalname}`);
+    },
+  }),
+});
+
+module.exports = {
+  upload,
+  uploadForDownload,
+  uploadToDynamicBucket,
+  uploadEncrypted,
+};

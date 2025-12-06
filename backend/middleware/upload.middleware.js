@@ -10,7 +10,6 @@ const upload = multer({
     s3: s3Client,
     bucket: BUCKET_NAME,
     contentType: multerS3.AUTO_CONTENT_TYPE,
-    acl: "public-read",
     metadata: (req, file, cb) => {
       cb(null, {
         fieldName: file.fieldname,
@@ -18,9 +17,7 @@ const upload = multer({
       });
     },
     key: (req, file, cb) => {
-        console.log("This is the original name", file.originalname);
-      const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-      const fileName = `${uniqueSuffix}${path.extname(file.originalname)}`;
+      const fileName = `${file.originalname}`;
       cb(null, fileName);
     },
   }),
@@ -33,11 +30,9 @@ const uploadWithFolder = multer({
     contentType: multerS3.AUTO_CONTENT_TYPE,
     key: (req, file, cb) => {
       const folder = req.params.folder || "upload";
-      const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-      const fileName = `${folder}/${uniqueSuffix}${path.extname(
-        file.originalname
-      )}`;
-    },
+      const fileName = `${folder}/${file.originalname}`;
+      cb(null, fileName);
+    }, 
   }),
 });
 

@@ -32,7 +32,7 @@ const getStudentsData = async () => {
   console.log("Scraping Data from College");
 
   const browser = await puppeteer.launch({
-    headless: true,
+    headless: false,
     defaultViewport: null,
   });
 

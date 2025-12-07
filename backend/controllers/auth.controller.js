@@ -85,6 +85,11 @@ exports.register = async (req, res) => {
       name,
       password,
       role,
+      academic: {
+        course: "BBA - IT",
+        currentSemester: "Semester - V",
+        year: "R23",
+      },
       providers: ["local"],
       activity: {
         totalLogins: [
@@ -583,7 +588,6 @@ exports.refreshToken = async (req, res) => {
       type: "success",
       accessToken,
     });
-    
   } catch (error) {
     console.error("Refresh Token error", error);
     res.status(403).send({ message: "Invalid Refresh Token", type: "error" });
@@ -598,7 +602,7 @@ exports.getProfile = async (req, res) => {
       type: "success",
     });
   } catch (error) {
-    console.log("This is the error", error);
+    console.error("This is the error", error);
     res.status(500).send({
       message: "Error fetching User Data",
       type: "error",

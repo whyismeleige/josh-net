@@ -56,6 +56,15 @@ const UserSchema = new mongoose.Schema(
         type: String,
       },
     },
+    academic: {
+      course: String,
+      currentSemester: String,
+      year: String,
+    },
+    isClassRepresentative: {
+      type: Boolean,
+      default: false,
+    },
     activity: {
       lastLogin: {
         type: Date,

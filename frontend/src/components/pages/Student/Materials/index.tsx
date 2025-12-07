@@ -20,6 +20,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useStudentContext } from "@/src/context/student.provider";
+import { useAppSelector } from "@/src/hooks/redux";
+import { CourseWorkData } from "@/src/types/material.types";
+import { BACKEND_URL } from "@/src/utils/config";
 import {
   Download,
   EllipsisVertical,
@@ -33,65 +36,70 @@ import {
   UserPlus,
   X,
 } from "lucide-react";
-import React, { Fragment, useState } from "react";
+import React, { Fragment, useEffect, useState } from "react";
 
-const data = [
-  {
-    id: "12345",
-    name: "Some Random Folder",
-    type: "folder",
-    date: "12-10-2025",
-    uploadedBy: "Piyush Jain",
-    size: "12 KB",
-    location: "/files/folder",
-    href: "/",
-  },
-  {
-    id: "12345",
-    name: "Some Random Folder",
-    type: "folder",
-    date: "12-10-2025",
-    uploadedBy: "Piyush Jain",
-    size: "12 KB",
-    location: "/files/folder",
-    href: "/",
-  },
-  {
-    id: "12345",
-    name: "Some Random Folder",
-    type: "folder",
-    date: "12-10-2025",
-    uploadedBy: "Piyush Jain",
-    size: "12 KB",
-    location: "/files/folder",
-    href: "/",
-  },
-  {
-    id: "12345",
-    name: "Some Random Folder",
-    type: "folder",
-    date: "12-10-2025",
-    uploadedBy: "Piyush Jain",
-    size: "12 KB",
-    location: "/files/folder",
-    href: "/",
-  },
-  {
-    id: "12345",
-    name: "Some Random Folder",
-    type: "folder",
-    date: "12-10-2025",
-    uploadedBy: "Piyush Jain",
-    size: "12 KB",
-    location: "/files/folder",
-    href: "/",
-  },
-];
+export interface Files {
+  title: string;
+  type: "folder" | "file";
+  children: Files[];
+  key?: string;
+  description?: string;
+}
+
+function insertPath(currentLevel: Files[], parts: string[]) {
+  if (parts.length === 0) return;
+
+  const [currentPart, ...remainingParts] = parts;
+  const isFile = remainingParts.length === 0 && currentPart.includes(".");
+
+  let node = currentLevel.find((n) => n.title === currentPart);
+
+  if (!node) {
+    node = {
+      title: currentPart,
+      type: isFile ? "file" : "folder",
+      children: [],
+    };
+    currentLevel.push(node);
+  }
+
+  if (remainingParts.length > 0) insertPath(node.children, remainingParts);
+}
+
+function pathsToTree(data: CourseWorkData[]) {
+  const root: Files[] = [];
+
+  data.forEach((material) => {
+    const parts = material.s3Key.split("/").filter(Boolean);
+    insertPath(root, parts);
+  });
+
+  return root;
+}
 
 export default function StudentMaterials() {
   const { materialsDisplay, selected, handleSelect, clearSelection } =
     useStudentContext();
-  const [buttonsVisibleIndex, setButtonsVisibleIndex] = useState<number | null>(null); 
+  const [buttonsVisibleIndex, setButtonsVisibleIndex] = useState<number | null>(
+    null
+  );
+  const [fileStructure, setFileStructure] = useState<Files[]>([]);
+
+  const { accessToken } = useAppSelector((state) => state.auth);
+
+  useEffect(() => {
+    fetch(`${BACKEND_URL}/api/v1/student/coursework`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        const root = pathsToTree(data.coursework);
+        setFileStructure(root);
+      });
+  }, []);
 
   return (
     <section className="p-2">
@@ -137,7 +145,7 @@ export default function StudentMaterials() {
       </div>
       <div className="flex flex-wrap">
         {materialsDisplay === "grid" ? (
-          data.map((item, index) => (
+          fileStructure.map((item, index) => (
             <div
               key={index}
               className={`flex flex-col cursor-pointer p-2 justify-center w-[100px] transition-colors ${
@@ -147,9 +155,9 @@ export default function StudentMaterials() {
             >
               <img
                 src="https://img.icons8.com/fluency/48/folder-invoices.png"
-                alt={item.name}
+                alt={item.title}
               />
-              <p className="text-sm font-medium truncate">{item.name}</p>
+              <p className="text-sm font-medium truncate">{item.title}</p>
             </div>
           ))
         ) : (
@@ -164,8 +172,7 @@ export default function StudentMaterials() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.map((item, index) => {
-
+              {fileStructure.map((item, index) => {
                 return (
                   <TableRow
                     className={`cursor-pointer transition-colors ${
@@ -182,11 +189,11 @@ export default function StudentMaterials() {
                       ) : (
                         <Folder size={20} />
                       )}
-                      {item.name}
+                      {item.title}
                     </TableCell>
-                    <TableCell>{item.uploadedBy}</TableCell>
-                    <TableCell>{item.date}</TableCell>
-                    <TableCell>{item.size}</TableCell>
+                    <TableCell>{item.title}</TableCell>
+                    <TableCell>12-10-2025</TableCell>
+                    <TableCell>10 KB</TableCell>
                     <TableCell className="flex gap-2 justify-end">
                       {buttonsVisibleIndex === index && (
                         <>

@@ -19,17 +19,6 @@ export interface AuthState {
   error: string | null;
 }
 
-const initialState: AuthState = {
-  user: null,
-  id: null,
-  accessToken: null,
-  isAuthenticated: false,
-  isLoading: false,
-  verificationId: null,
-  purpose: null,
-  error: null,
-};
-
 const TokenService = {
   getAccessToken: () => {
     if (typeof window === "undefined") return null;
@@ -64,6 +53,17 @@ const TokenService = {
       return true;
     }
   },
+};
+
+const initialState: AuthState = {
+  user: null,
+  id: null,
+  accessToken: TokenService.getAccessToken() || null,
+  isAuthenticated: false,
+  isLoading: false,
+  verificationId: null,
+  purpose: null,
+  error: null,
 };
 
 export const registerUser = createAsyncThunk(

@@ -33,7 +33,7 @@ const data = [
 ];
 
 export default function MaterialsHeader() {
-  const { materialsDisplay, setMaterialsDisplay } = useStudentContext();
+  const { materialsDisplay, setMaterialsDisplay, } = useStudentContext();
   return (
     <header className="flex h-(--header-height) shrink-0 items-center justify-between border-b gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
       <Breadcrumb className="ml-4">

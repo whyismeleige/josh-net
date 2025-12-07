@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/table";
 import { useStudentContext } from "@/src/context/student.provider";
 import { useAppSelector } from "@/src/hooks/redux";
-import { CourseWorkData } from "@/src/types/material.types";
+import { CourseWorkData, Files } from "@/src/types/material.types";
 import { BACKEND_URL } from "@/src/utils/config";
 import {
   Download,
@@ -29,6 +29,7 @@ import {
   File,
   Filter,
   Folder,
+  FolderIcon,
   Link,
   Search,
   SortAsc,
@@ -38,67 +39,22 @@ import {
 } from "lucide-react";
 import React, { Fragment, useEffect, useState } from "react";
 
-export interface Files {
-  title: string;
-  type: "folder" | "file";
-  children: Files[];
-  key?: string;
-  description?: string;
-}
-
-function insertPath(currentLevel: Files[], parts: string[]) {
-  if (parts.length === 0) return;
-
-  const [currentPart, ...remainingParts] = parts;
-  const isFile = remainingParts.length === 0 && currentPart.includes(".");
-
-  let node = currentLevel.find((n) => n.title === currentPart);
-
-  if (!node) {
-    node = {
-      title: currentPart,
-      type: isFile ? "file" : "folder",
-      children: [],
-    };
-    currentLevel.push(node);
-  }
-
-  if (remainingParts.length > 0) insertPath(node.children, remainingParts);
-}
-
-function pathsToTree(data: CourseWorkData[]) {
-  const root: Files[] = [];
-
-  data.forEach((material) => {
-    const parts = material.s3Key.split("/").filter(Boolean);
-    insertPath(root, parts);
-  });
-
-  return root;
-}
-
 export default function StudentMaterials() {
-  const { materialsDisplay, selected, handleSelect, clearSelection } =
-    useStudentContext();
+  const {
+    materialsDisplay,
+    selected,
+    handleSelect,
+    clearSelection,
+    fileStructure,
+    fetchCourseWork,
+  } = useStudentContext();
+
   const [buttonsVisibleIndex, setButtonsVisibleIndex] = useState<number | null>(
     null
   );
-  const [fileStructure, setFileStructure] = useState<Files[]>([]);
-
-  const { accessToken } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
-    fetch(`${BACKEND_URL}/api/v1/student/coursework`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        const root = pathsToTree(data.coursework);
-        setFileStructure(root);
-      });
+    fetchCourseWork();
   }, []);
 
   return (
@@ -148,15 +104,12 @@ export default function StudentMaterials() {
           fileStructure.map((item, index) => (
             <div
               key={index}
-              className={`flex flex-col cursor-pointer p-2 justify-center w-[100px] transition-colors ${
+              className={`flex flex-col cursor-pointer p-2 justify-center transition-colors ${
                 selected.has(index) ? "bg-blue-500" : "hover:bg-muted/50 "
               }`}
               onClick={(e) => handleSelect(index, e)}
             >
-              <img
-                src="https://img.icons8.com/fluency/48/folder-invoices.png"
-                alt={item.title}
-              />
+              <FolderIcon size={52} />
               <p className="text-sm font-medium truncate">{item.title}</p>
             </div>
           ))

@@ -40,3 +40,11 @@ export interface CourseWorkData {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface Files {
+  title: string;
+  type: "folder" | "file";
+  children: Files[];
+  key?: string;
+  description?: string;
+}

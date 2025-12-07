@@ -1,3 +1,5 @@
+import { Files } from "./material.types";
+
 export type MaterialDisplay = "grid" | "list";
 
 export type StudentContextType = {
@@ -12,4 +14,6 @@ export type StudentContextType = {
     event: React.MouseEvent<HTMLTableRowElement | HTMLDivElement, MouseEvent>
   ) => void;
   clearSelection: () => void;
+  fileStructure: Files[];
+  fetchCourseWork: () => void;
 };

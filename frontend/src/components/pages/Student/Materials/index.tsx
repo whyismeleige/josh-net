@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Table,
   TableBody,
@@ -21,7 +22,13 @@ import {
 } from "@/components/ui/table";
 import { useStudentContext } from "@/src/context/student.provider";
 import { useAppSelector } from "@/src/hooks/redux";
-import { CourseWorkData, Files } from "@/src/types/material.types";
+import {
+  CourseWorkData,
+  DirectionOptions,
+  Files,
+  FolderOptions,
+  SortOptions,
+} from "@/src/types/material.types";
 import { BACKEND_URL } from "@/src/utils/config";
 import {
   Download,
@@ -31,22 +38,28 @@ import {
   Folder,
   FolderIcon,
   Link,
+  MoveLeft,
   Search,
   SortAsc,
   SortDesc,
   UserPlus,
   X,
 } from "lucide-react";
-import React, { Fragment, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function StudentMaterials() {
   const {
+    isLoading,
     materialsDisplay,
     selected,
     handleSelect,
     clearSelection,
-    fileStructure,
     fetchCourseWork,
+    handleFolderClick,
+    getCurrentItems,
+    goBack,
+    searchInput,
+    setSearchInput,
   } = useStudentContext();
 
   const [buttonsVisibleIndex, setButtonsVisibleIndex] = useState<number | null>(
@@ -57,11 +70,25 @@ export default function StudentMaterials() {
     fetchCourseWork();
   }, []);
 
+  const fileStructure: Files[] = getCurrentItems();
+
+  if (isLoading) {
+    return (
+      <section>
+        <Spinner />
+        Fetching Files
+      </section>
+    );
+  }
+
   return (
     <section className="p-2">
       <div className="flex gap-2 mb-2">
         {selected.size === 0 ? (
           <>
+            <Button variant="outline" size="icon" onClick={goBack}>
+              <MoveLeft />
+            </Button>
             <div className="flex-1 relative">
               <Search
                 size={20}
@@ -71,6 +98,8 @@ export default function StudentMaterials() {
                 id="text"
                 className="pl-10"
                 placeholder="Search for Academic Materials"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
               />
             </div>
             <SortingMenu />
@@ -99,20 +128,30 @@ export default function StudentMaterials() {
           </div>
         )}
       </div>
-      <div className="flex flex-wrap">
+      <div className="flex flex-wrap p-2 gap-3">
         {materialsDisplay === "grid" ? (
-          fileStructure.map((item, index) => (
-            <div
-              key={index}
-              className={`flex flex-col cursor-pointer p-2 justify-center transition-colors ${
-                selected.has(index) ? "bg-blue-500" : "hover:bg-muted/50 "
-              }`}
-              onClick={(e) => handleSelect(index, e)}
-            >
-              <FolderIcon size={52} />
-              <p className="text-sm font-medium truncate">{item.title}</p>
-            </div>
-          ))
+          fileStructure.map(
+            (item, index) =>
+              item.title.includes(searchInput.trim()) && (
+                <div
+                  key={index}
+                  className={`flex flex-col items-center cursor-pointer p-4 justify-center transition-colors rounded-lg aspect-square w-[calc(50%-0.375rem)] sm:w-[calc(33.333%-0.5rem)] md:w-[calc(25%-0.5625rem)] lg:w-[calc(16.666%-0.625rem)] xl:w-[calc(12.5%-0.65625rem)] ${
+                    selected.has(index) ? "bg-blue-500" : "hover:bg-muted/50"
+                  }`}
+                  onDoubleClick={(e) => handleFolderClick(index, e)}
+                  onClick={(e) => handleSelect(index, e)}
+                >
+                  {item.type === "folder" ? (
+                    <FolderIcon size={48} className="mb-2 flex-shrink-0" />
+                  ) : (
+                    <File size={48} className="mb-2 flex-shrink-0" />
+                  )}
+                  <span className="text-sm font-medium line-clamp-1 break-words w-full text-center">
+                    {item.title}
+                  </span>
+                </div>
+              )
+          )
         ) : (
           <Table>
             <TableHeader>
@@ -127,45 +166,48 @@ export default function StudentMaterials() {
             <TableBody>
               {fileStructure.map((item, index) => {
                 return (
-                  <TableRow
-                    className={`cursor-pointer transition-colors ${
-                      selected.has(index) && "bg-blue-500"
-                    }`}
-                    onClick={(e) => handleSelect(index, e)}
-                    onMouseEnter={() => setButtonsVisibleIndex(index)}
-                    onMouseLeave={() => setButtonsVisibleIndex(null)}
-                    key={index}
-                  >
-                    <TableCell className="flex items-center gap-2">
-                      {item.type === "file" ? (
-                        <File size={20} />
-                      ) : (
-                        <Folder size={20} />
-                      )}
-                      {item.title}
-                    </TableCell>
-                    <TableCell>{item.title}</TableCell>
-                    <TableCell>12-10-2025</TableCell>
-                    <TableCell>10 KB</TableCell>
-                    <TableCell className="flex gap-2 justify-end">
-                      {buttonsVisibleIndex === index && (
-                        <>
-                          <Button variant="outline" size="icon-sm">
-                            <UserPlus />
-                          </Button>
-                          <Button variant="outline" size="icon-sm">
-                            <Download />
-                          </Button>
-                          <Button variant="outline" size="icon-sm">
-                            <Link />
-                          </Button>
-                        </>
-                      )}
-                      <Button variant="outline" size="icon-sm">
-                        <EllipsisVertical />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
+                  item.title.includes(searchInput.trim()) && (
+                    <TableRow
+                      className={`cursor-pointer transition-colors ${
+                        selected.has(index) && "bg-blue-500"
+                      }`}
+                      onClick={(e) => handleSelect(index, e)}
+                      onMouseEnter={() => setButtonsVisibleIndex(index)}
+                      onMouseLeave={() => setButtonsVisibleIndex(null)}
+                      key={index}
+                      onDoubleClick={(e) => handleFolderClick(index, e)}
+                    >
+                      <TableCell className="flex items-center gap-2">
+                        {item.type === "file" ? (
+                          <File size={20} />
+                        ) : (
+                          <Folder size={20} />
+                        )}
+                        {item.title}
+                      </TableCell>
+                      <TableCell>{item.uploadedBy || "User"}</TableCell>
+                      <TableCell>{item.createdAt || "12-10-2025"}</TableCell>
+                      <TableCell>{item.size || "10 KB"}</TableCell>
+                      <TableCell className="flex gap-2 justify-end">
+                        {buttonsVisibleIndex === index && (
+                          <>
+                            <Button variant="outline" size="icon-sm">
+                              <UserPlus />
+                            </Button>
+                            <Button variant="outline" size="icon-sm">
+                              <Download />
+                            </Button>
+                            <Button variant="outline" size="icon-sm">
+                              <Link />
+                            </Button>
+                          </>
+                        )}
+                        <Button variant="outline" size="icon-sm">
+                          <EllipsisVertical />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  )
                 );
               })}
             </TableBody>
@@ -179,51 +221,78 @@ export default function StudentMaterials() {
 const FilterDialog = () => {};
 
 const SortingMenu = () => {
-  const [sortOption, setSortOption] = useState("name");
-  const [directionOption, setDirectionOption] = useState("ascending");
-  const [folderOption, setFolderOption] = useState("top");
+  const { sortObject, setSortObject } = useStudentContext();
+  const directions: {
+    [key in SortOptions]: { [key in DirectionOptions]: string };
+  } = {
+    name: {
+      ascending: "A to Z",
+      descending: "Z to A",
+    },
+    usage: {
+      ascending: "Recently Used",
+      descending: "Last Used",
+    },
+    size: {
+      ascending: "Smallest to Largest",
+      descending: "Largest to Smallest",
+    },
+  };
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="icon">
-          {directionOption === "ascending" ? <SortAsc /> : <SortDesc />}
+          {sortObject.directionOption === "ascending" ? (
+            <SortAsc />
+          ) : (
+            <SortDesc />
+          )}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-45" align="end">
         <DropdownMenuLabel>Sort By</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuRadioGroup
-          value={sortOption}
-          onValueChange={setSortOption}
+          value={sortObject.sortOption}
+          onValueChange={(value) =>
+            setSortObject({ ...sortObject, sortOption: value as SortOptions })
+          }
         >
           <DropdownMenuRadioItem value="name">Name</DropdownMenuRadioItem>
           <DropdownMenuRadioItem value="usage">Usage</DropdownMenuRadioItem>
           <DropdownMenuRadioItem value="size">Size</DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="uploaded-by">
-            Uploaded By
-          </DropdownMenuRadioItem>
         </DropdownMenuRadioGroup>
         <DropdownMenuSeparator />
         <DropdownMenuLabel>Sort Direction</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuRadioGroup
-          value={directionOption}
-          onValueChange={setDirectionOption}
+          value={sortObject.directionOption}
+          onValueChange={(value) =>
+            setSortObject({
+              ...sortObject,
+              directionOption: value as DirectionOptions,
+            })
+          }
         >
           <DropdownMenuRadioItem value="ascending">
-            A to Z
+            {directions[sortObject.sortOption].ascending}
           </DropdownMenuRadioItem>
           <DropdownMenuRadioItem value="descending">
-            Z to A
+            {directions[sortObject.sortOption].descending}
           </DropdownMenuRadioItem>
         </DropdownMenuRadioGroup>
         <DropdownMenuSeparator />
         <DropdownMenuLabel>Folders</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuRadioGroup
-          value={folderOption}
-          onValueChange={setFolderOption}
+          value={sortObject.folderOption}
+          onValueChange={(value) =>
+            setSortObject({
+              ...sortObject,
+              folderOption: value as FolderOptions,
+            })
+          }
         >
           <DropdownMenuRadioItem value="top">On top</DropdownMenuRadioItem>
           <DropdownMenuRadioItem value="mixed">

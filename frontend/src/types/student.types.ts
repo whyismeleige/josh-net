@@ -1,8 +1,9 @@
-import { Files } from "./material.types";
+import { Files, SortObject } from "./material.types";
 
 export type MaterialDisplay = "grid" | "list";
 
 export type StudentContextType = {
+  isLoading: boolean;
   headerTitle: string;
   setHeaderTitle: (title: string) => void;
   materialsDisplay: MaterialDisplay;
@@ -15,5 +16,14 @@ export type StudentContextType = {
   ) => void;
   clearSelection: () => void;
   fileStructure: Files[];
+  currentPath: string[];
   fetchCourseWork: () => void;
+  getCurrentItems: () => Files[];
+  handleFolderClick: (index: number, e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void;
+  handleBreadCrumbClick: (index: number) => void;
+  goBack: () => void;
+  sortObject: SortObject;
+  setSortObject: (object: SortObject) => void;
+  searchInput: string;
+  setSearchInput: (value: string) => void;
 };

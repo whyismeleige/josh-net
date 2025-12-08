@@ -5,6 +5,16 @@ export type MaterialVisibility =
   | "faculty_only";
 export type MaterialStatus = "draft" | "published" | "archived" | "in_review";
 
+export type SortOptions = "name" | "usage" | "size";
+export type DirectionOptions = "ascending" | "descending";
+export type FolderOptions = "top" | "mixed";
+
+export interface SortObject {
+  sortOption: SortOptions,
+  directionOption: DirectionOptions,
+  folderOption: FolderOptions
+}
+
 export interface CourseWorkData {
   academicDetails: {
     course: string;
@@ -45,6 +55,35 @@ export interface Files {
   title: string;
   type: "folder" | "file";
   children: Files[];
-  key?: string;
+  key: string;
   description?: string;
+  academicDetails?: {
+    course?: string;
+    semester?: string;
+    year?: string;
+    subjectName?: string;
+    subjectCode?: string;
+  };
+  analytics?: {
+    downloadedBy?: {
+      userId: string;
+      timeOfShare: string;
+    }[];
+    sharedBy?: {
+      userId: string;
+      timeOfShare: string;
+    }[];
+  };
+  _id?: string;
+  uploadedBy?: string;
+  s3URL?: string;
+  status?: MaterialStatus;
+  visibility?: MaterialVisibility;
+  downloadAllowed?: boolean;
+  sharingAllowed?: boolean;
+  mimetype?: string;
+  size?: string;
+  contentType?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }

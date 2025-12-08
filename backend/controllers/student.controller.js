@@ -14,7 +14,8 @@ const {
 const s3Client = require("../config/s3.config");
 const db = require("../models");
 const { Readable } = require("stream");
-
+const path = require("path");
+const archiver = require("archiver")
 
 const Material = db.material;
 
@@ -100,6 +101,94 @@ exports.uploadMultiple = async (req, res) => {
     });
   } catch (error) {
     console.error("Upload Error", error);
+    res.status(500).send({
+      message: error.message || "Server Error",
+      type: "error",
+    });
+  }
+};
+
+async function listS3Objects(key) {
+  const objects = [];
+  let continuationToken;
+
+  do {
+    const command = new ListObjectsV2Command({
+      Bucket: BUCKET_NAME,
+      Prefix: folderPrefix,
+      ContinuationToken: continuationToken,
+    });
+
+    const response = await s3Client.send(command);
+
+    if (response.Contents) {
+      const files = response.Contents.filter((obj) => !obj.Key.endsWith("/"));
+      objects.push(...files);
+    }
+    continuationToken = response.ContinuationToken;
+  } while (continuationToken);
+
+  return objects;
+}
+
+async function downloadSingleFile(key) {
+  const command = new GetObjectCommand({
+    Bucket: BUCKET_NAME,
+    Key: key,
+  });
+  const response = await s3Client.send(command);
+  return {
+    stream: response.Body,
+    contentType: response.ContentType,
+    filename: path.basename(key),
+  };
+}
+
+exports.downloadFolder = async (req, res) => {
+  try {
+    const { keys } = req.body;
+
+    if (!keys || !Array.isArray(keys) || keys.length === 0) {
+      return res.status(400).send({
+        message: "Please select the folders to be downloaded",
+        type: "error",
+      });
+    }
+
+    let allObjects = [];
+
+    for (const key of keys) {
+      const objects = await listS3Objects(key);
+      allObjects.push(
+        ...objects.map((obj) => ({
+          ...obj,
+          sourcePath: key,
+        }))
+      );
+    }
+
+    if (allObjects.length === 1) {
+      const fileData = await downloadSingleFile(allObjects[0].Key);
+
+      res.setHeader(
+        "Content-Type",
+        fileData.contentType || "application/octet-stream"
+      );
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="${fileData.filename}"`
+      );
+
+      fileData.stream.pipe(res);
+      return;
+    }
+
+    const zipName =
+      keys.length === 1 ? `${path.basename(keys[0])}.zip` : "download.zip";
+
+
+  } catch (error) {
+    console.error("Error in Downloading Folders", error);
     res.status(500).send({
       message: error.message || "Server Error",
       type: "error",
@@ -462,7 +551,7 @@ exports.getStudentCoursework = async (req, res) => {
     res.status(200).send({
       message: "Course Work successfully retrieved",
       type: "success",
-      coursework
+      coursework,
     });
   } catch (error) {
     console.error("Error in Getting Student Course Work", error);

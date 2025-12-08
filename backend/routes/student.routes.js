@@ -23,7 +23,9 @@ router.post(
   controller.uploadMultiple
 );
 
-router.get("/download/:key", controller.downloadFile);
+router.get("/download", controller.downloadFile);
+router.post("/download-folders", controller.downloadFolder);
+
 router.get("/files", controller.listFiles);
 
 router.delete("/files", controller.deleteFiles);

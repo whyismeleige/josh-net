@@ -26,4 +26,6 @@ export type StudentContextType = {
   setSortObject: (object: SortObject) => void;
   searchInput: string;
   setSearchInput: (value: string) => void;
+  downloadFiles: () => void;
+  handleFileClick: (key: string) => Promise<void>;
 };

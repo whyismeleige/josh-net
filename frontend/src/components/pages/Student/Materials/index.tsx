@@ -60,6 +60,8 @@ export default function StudentMaterials() {
     goBack,
     searchInput,
     setSearchInput,
+    downloadFiles,
+    handleFileClick,
   } = useStudentContext();
 
   const [buttonsVisibleIndex, setButtonsVisibleIndex] = useState<number | null>(
@@ -116,7 +118,7 @@ export default function StudentMaterials() {
             <Button size="icon">
               <UserPlus />
             </Button>
-            <Button size="icon">
+            <Button size="icon" onClick={downloadFiles}>
               <Download />
             </Button>
             <Button size="icon">
@@ -138,7 +140,10 @@ export default function StudentMaterials() {
                   className={`flex flex-col items-center cursor-pointer p-4 justify-center transition-colors rounded-lg aspect-square w-[calc(50%-0.375rem)] sm:w-[calc(33.333%-0.5rem)] md:w-[calc(25%-0.5625rem)] lg:w-[calc(16.666%-0.625rem)] xl:w-[calc(12.5%-0.65625rem)] ${
                     selected.has(index) ? "bg-blue-500" : "hover:bg-muted/50"
                   }`}
-                  onDoubleClick={(e) => handleFolderClick(index, e)}
+                  onDoubleClick={async (e) => {
+                    if (item.type === "folder") handleFolderClick(index, e);
+                    if (item.type === "file") await handleFileClick(item.key);
+                  }}
                   onClick={(e) => handleSelect(index, e)}
                 >
                   {item.type === "folder" ? (
@@ -175,7 +180,11 @@ export default function StudentMaterials() {
                       onMouseEnter={() => setButtonsVisibleIndex(index)}
                       onMouseLeave={() => setButtonsVisibleIndex(null)}
                       key={index}
-                      onDoubleClick={(e) => handleFolderClick(index, e)}
+                      onDoubleClick={async (e) => {
+                        if (item.type === "folder") handleFolderClick(index, e);
+                        if (item.type === "file")
+                          await handleFileClick(item.key);
+                      }}
                     >
                       <TableCell className="flex items-center gap-2">
                         {item.type === "file" ? (

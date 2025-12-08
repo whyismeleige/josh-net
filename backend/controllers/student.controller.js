@@ -15,7 +15,7 @@ const s3Client = require("../config/s3.config");
 const db = require("../models");
 const { Readable } = require("stream");
 const path = require("path");
-const archiver = require("archiver")
+const archiver = require("archiver");
 
 const Material = db.material;
 
@@ -115,7 +115,7 @@ async function listS3Objects(key) {
   do {
     const command = new ListObjectsV2Command({
       Bucket: BUCKET_NAME,
-      Prefix: folderPrefix,
+      Prefix: key,
       ContinuationToken: continuationToken,
     });
 
@@ -186,7 +186,41 @@ exports.downloadFolder = async (req, res) => {
     const zipName =
       keys.length === 1 ? `${path.basename(keys[0])}.zip` : "download.zip";
 
+    res.setHeader("Content-Type", "application/zip");
+    res.setHeader("Content-Disposition", `attachment; filename="${zipName}"`);
 
+    const archive = archiver("zip", { zlib: { level: 6 } });
+
+    archive.on("error", (err) => {
+      console.error("Archive error:", err);
+      res.status(500).send({
+        message: "Failed to create archive",
+        type: "error",
+      });
+    });
+
+    archive.pipe(res);
+
+    for (const object of allObjects) {
+      const command = new GetObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: object.Key,
+      });
+
+      const response = await s3Client.send(command);
+
+      // Calculate relative path for zip structure
+      const prefix = object.sourcePath.endsWith("/")
+        ? object.sourcePath
+        : `${object.sourcePath}/`;
+      const relativePath = object.Key.replace(prefix, "");
+
+      // Add file to archive
+      archive.append(response.Body, { name: relativePath });
+    }
+
+    // Finalize the archive
+    await archive.finalize();
   } catch (error) {
     console.error("Error in Downloading Folders", error);
     res.status(500).send({
@@ -198,7 +232,7 @@ exports.downloadFolder = async (req, res) => {
 
 exports.downloadFile = async (req, res) => {
   try {
-    const key = decodeURIComponent(req.params.key);
+    const key = req.query.key;
 
     const material = await Material.findOne({ s3Key: key });
 
@@ -220,8 +254,6 @@ exports.downloadFile = async (req, res) => {
       "Content-Length": data.ContentLength,
       "Content-Disposition": `attachment; filename="${key.split("/").pop()}"`,
     });
-
-    await material.saveDownloadAnalytics(req.user.id);
 
     if (data.Body instanceof Readable) {
       data.Body.pipe(res);

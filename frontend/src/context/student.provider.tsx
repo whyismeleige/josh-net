@@ -192,6 +192,47 @@ export function StudentProvider({ children }: { children: ReactNode }) {
     if (currentPath.length > 0) setCurrentPath(currentPath.slice(0, -1));
   };
 
+  const downloadFiles = async () => {
+    const keys: string[] = [];
+    const current = getCurrentItems();
+    selected.forEach((value) => {
+      keys.push(current[value].key);
+    });
+    const response = await fetch(
+      `${BACKEND_URL}/api/v1/student/download-folders`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ keys }),
+      }
+    );
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "download.zip";
+    link.click();
+    window.URL.revokeObjectURL(url);
+  };
+
+  const handleFileClick = async (key: string) => {
+    const response = await fetch(
+      `${BACKEND_URL}/api/v1/student/download?key=${key}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+    const blob = await response.blob();
+    console.log(blob);
+  };
+
   const value: StudentContextType = {
     isLoading,
     headerTitle,
@@ -213,6 +254,8 @@ export function StudentProvider({ children }: { children: ReactNode }) {
     setSortObject,
     searchInput,
     setSearchInput,
+    downloadFiles,
+    handleFileClick
   };
 
   return (

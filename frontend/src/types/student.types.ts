@@ -28,4 +28,5 @@ export type StudentContextType = {
   setSearchInput: (value: string) => void;
   downloadFiles: () => void;
   handleFileClick: (key: string) => Promise<void>;
+  fileBlob: Blob | null;
 };

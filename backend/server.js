@@ -1,14 +1,19 @@
 const express = require("express");
 const cors = require("cors");
-const bodyParser = require("body-parser");
+const intializeSocket = require("./sockets");
+const { createServer } = require("node:http");
 const connectDB = require("./database/connectDB");
 require("dotenv").config();
 
 const app = express();
+const server = createServer(app);
+const io = intializeSocket(server);
 const PORT = process.env.PORT || 8080;
 
 const authRoutes = require("./routes/auth.routes");
 const studentRoutes = require("./routes/student.routes");
+
+app.set("io", io);
 
 // Middleware
 app.use(
@@ -17,7 +22,6 @@ app.use(
     credentials: true,
   })
 );
-app.use(bodyParser.json());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -55,6 +59,6 @@ app.use((req, res) => {
 });
 
 // Start server
-app.listen(PORT, () => console.log("Server running on PORT:", PORT));
+server.listen(PORT, () => console.log("Server running on PORT:", PORT));
 
 module.exports = app;

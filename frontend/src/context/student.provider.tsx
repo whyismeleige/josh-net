@@ -80,6 +80,7 @@ export function StudentProvider({ children }: { children: ReactNode }) {
     folderOption: "top",
   });
   const [searchInput, setSearchInput] = useState<string>("");
+  const [fileBlob, setFileBlob] = useState<Blob | null>(null);
 
   const { accessToken } = useAppSelector((state) => state.auth);
 
@@ -231,6 +232,7 @@ export function StudentProvider({ children }: { children: ReactNode }) {
     );
     const blob = await response.blob();
     console.log(blob);
+    setFileBlob(blob);
   };
 
   const value: StudentContextType = {
@@ -255,7 +257,8 @@ export function StudentProvider({ children }: { children: ReactNode }) {
     searchInput,
     setSearchInput,
     downloadFiles,
-    handleFileClick
+    handleFileClick,
+    fileBlob
   };
 
   return (

@@ -46,6 +46,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import FileViewer from "./file-viewer";
 
 export default function StudentMaterials() {
   const {
@@ -62,6 +63,7 @@ export default function StudentMaterials() {
     setSearchInput,
     downloadFiles,
     handleFileClick,
+    fileBlob
   } = useStudentContext();
 
   const [buttonsVisibleIndex, setButtonsVisibleIndex] = useState<number | null>(
@@ -223,6 +225,7 @@ export default function StudentMaterials() {
           </Table>
         )}
       </div>
+      {fileBlob && <FileViewer/>}
     </section>
   );
 }

@@ -12,6 +12,7 @@ const PORT = process.env.PORT || 8080;
 
 const authRoutes = require("./routes/auth.routes");
 const studentRoutes = require("./routes/student.routes");
+const serverRoutes = require("./routes/server.routes");
 
 app.set("io", io);
 
@@ -29,6 +30,7 @@ connectDB();
 
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/student", studentRoutes);
+app.use("/api/v1/server", serverRoutes);
 
 // Health check route
 app.get("/health", (req, res) => {

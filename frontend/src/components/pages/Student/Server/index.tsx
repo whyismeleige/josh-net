@@ -4,6 +4,7 @@ import { usePageTitle } from "@/src/hooks/usePageTitle";
 import { BACKEND_URL } from "@/src/utils/config";
 import { ChangeEvent, useState } from "react";
 import { io } from "socket.io-client"
+
 export default function StudentServer() {
     const [value, setValue] = useState("");
     const socket = io(BACKEND_URL);

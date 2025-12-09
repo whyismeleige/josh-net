@@ -182,6 +182,12 @@ const UserSchema = new mongoose.Schema(
         },
       },
     ],
+    servers: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Server",
+      },
+    ],
   },
   {
     timestamps: true,
@@ -249,6 +255,11 @@ UserSchema.methods.successfulLogin = async function (metadata) {
   ];
   this.security.loginAttempts = 0;
   this.security.lockUntil = null;
+  await this.save();
+};
+
+UserSchema.methods.addNewServer = async function (serverId) {
+  this.servers = [...this.servers, serverId];
   await this.save();
 };
 

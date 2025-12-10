@@ -26,6 +26,10 @@ const ChannelSchema = new mongoose.Schema(
       enum: ["dm", "group_dm", "guild_announcement", "guild_text"],
       default: "guild_text",
     },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
     messages: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -39,5 +43,14 @@ const ChannelSchema = new mongoose.Schema(
     toObject: true,
   }
 );
+
+ChannelSchema.statics.createNewChannel = async function (data, userId) {
+  return await this.create({
+    name: data.name,
+    description: data?.description,
+    type: data?.type,
+    createdBy: userId,
+  });
+};
 
 module.exports = mongoose.model("Channel", ChannelSchema);

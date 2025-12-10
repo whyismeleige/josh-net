@@ -102,6 +102,11 @@ const ServerSchema = new mongoose.Schema(
   }
 );
 
+ServerSchema.methods.addChannel = async function (channelId) {
+  this.channels = [...this.channels, channelId];
+  await this.save();
+};
+
 ServerSchema.statics.createNewServer = async function (data, userId) {
   return await this.create({
     name: data.name,
@@ -112,7 +117,8 @@ ServerSchema.statics.createNewServer = async function (data, userId) {
     serverType: data?.serverType,
     academicInfo: data?.academicInfo,
     joinPolicy: data?.joinPolicy,
-  })
-}
+    users: [userId],
+  });
+};
 
 module.exports = mongoose.model("Server", ServerSchema);

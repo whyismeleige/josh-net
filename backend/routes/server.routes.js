@@ -8,6 +8,11 @@ const {
 
 router.use(authenticateToken, authorizeRoles("student", "faculty", "admin"));
 
+// Server Routes
 router.post("/create", controller.createServer);
+router.get("/list", controller.listServers);
+
+// Channel Routes
+router.post("/channel/create", controller.createChannel);
 
 module.exports = router;

@@ -1,5 +1,7 @@
 const db = require("../models");
 
+const { sanitizeUser } = require("../utils/auth.utils");
+
 const Server = db.server;
 const User = db.user;
 const Channel = db.channel;
@@ -45,7 +47,13 @@ exports.listServers = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).populate({
       path: "servers",
-      populate: { path: "users" },
+      populate: {
+        path: "users",
+        transform: (doc) => {
+          if (!doc) return doc;
+          return sanitizeUser(doc);
+        },
+      },
     });
 
     return res.status(200).send({
@@ -124,7 +132,7 @@ exports.listChannels = async (req, res) => {
     res.status(200).send({
       message: "Channels retrieved successfully",
       type: "success",
-      channels
+      channels,
     });
   } catch (error) {
     console.error("Error in Retrieving Channels", error);

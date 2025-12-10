@@ -1,5 +1,6 @@
 "use client";
 import { Input } from "@/components/ui/input";
+import { useServerContext } from "@/src/context/server.provider";
 import { useStudentContext } from "@/src/context/student.provider";
 import { useAppSelector } from "@/src/hooks/redux";
 import { usePageTitle } from "@/src/hooks/usePageTitle";
@@ -9,9 +10,9 @@ import { io } from "socket.io-client";
 
 export default function StudentServer() {
   const { accessToken } = useAppSelector((state) => state.auth);
+  const { getServerList } = useServerContext();
 
   const [value, setValue] = useState("");
-  const [serverData, setServerData] = useState();
   const socket = io(BACKEND_URL);
 
   usePageTitle("Student Server");
@@ -22,14 +23,7 @@ export default function StudentServer() {
   };
 
   useEffect(() => {
-    fetch(`${BACKEND_URL}/api/v1/server/list`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    })
-      .then((response) => response.json())
-      .then((data) => console.log(data));
+    getServerList();
   }, []);
   return (
     <div className="flex">

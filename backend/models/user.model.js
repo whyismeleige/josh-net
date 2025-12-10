@@ -192,7 +192,6 @@ const UserSchema = new mongoose.Schema(
   {
     timestamps: true,
     toJSON: {
-      virtuals: true,
       transform: function (doc, ret) {
         delete ret.password;
         delete ret.security.passwordHistory;
@@ -202,7 +201,6 @@ const UserSchema = new mongoose.Schema(
       },
     },
     toObject: {
-      virtuals: true,
       transform: function (doc, ret) {
         delete ret.password;
         delete ret.refreshTokens;

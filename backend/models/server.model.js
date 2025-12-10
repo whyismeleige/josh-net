@@ -97,8 +97,18 @@ const ServerSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-    toJSON: true,
-    toObject: true,
+    toJSON: {
+      transform: function (doc, ret) {
+        delete ret.__v;
+        return ret;
+      },
+    },
+    toObject: {
+      transform: function (doc, ret) {
+        delete ret.__v;
+        return ret;
+      },
+    },
   }
 );
 

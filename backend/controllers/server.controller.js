@@ -116,9 +116,9 @@ exports.createChannel = async (req, res) => {
 
 exports.listChannels = async (req, res) => {
   try {
-    const serverId = req.params.serverId;
+    const serverId = req.query.serverId;
 
-    const server = await Server.findById(serverId);
+    const server = await Server.findById(serverId).populate("channels");
 
     if (!server) {
       return res.status(400).send({
@@ -127,12 +127,10 @@ exports.listChannels = async (req, res) => {
       });
     }
 
-    const channels = server.populate("channels");
-
     res.status(200).send({
       message: "Channels retrieved successfully",
       type: "success",
-      channels,
+      channels: server.channels,
     });
   } catch (error) {
     console.error("Error in Retrieving Channels", error);

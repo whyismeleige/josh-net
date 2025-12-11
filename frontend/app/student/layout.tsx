@@ -2,7 +2,6 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import StudentHeader from "@/src/components/pages/Student/header";
 import StudentSidebar from "@/src/components/pages/Student/sidebar";
 import { StudentProvider } from "@/src/context/student.provider";
-import AuthProvider from "@/src/store/providers/AuthProvider";
 import { Metadata } from "next";
 import { ReactNode } from "react";
 

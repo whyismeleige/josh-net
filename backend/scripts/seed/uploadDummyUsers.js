@@ -14,13 +14,12 @@ const Message = db.message;
 async function generateDummyData() {
   try {
     // Connect to MongoDB
-    mongoose
-      .connect(process.env.MONGO_URI, { dbName: process.env.DB_NAME })
-      .then(() => console.log("Successfully connected to MongoDB"))
-      .catch((err) => console.log("Connection Error", err));
+    await mongoose.connect(process.env.MONGO_URI, {
+      dbName: process.env.DB_NAME,
+    });
 
     // ================ CREATE USERS ================
-    const hashedPassword = "password123";
+    const hashedPassword = await bcrypt.hash("password123", 12);
 
     const users = await User.insertMany([
       {
@@ -42,26 +41,6 @@ async function generateDummyData() {
         isClassRepresentative: true,
         activity: {
           lastLogin: new Date(),
-          totalLogins: [
-            {
-              loginTime: new Date(),
-              attemptsReached: 0,
-              maxAttemptsReached: false,
-              metadata: {
-                ipAddress: "192.168.1.100",
-                userAgent: "Mozilla/5.0",
-                browser: { name: "Chrome", version: "120.0", major: "120" },
-                os: { name: "Windows", version: "10" },
-                device: { type: "desktop" },
-                location: {
-                  country: "India",
-                  region: "Karnataka",
-                  city: "Bangalore",
-                  timezone: "Asia/Kolkata",
-                },
-              },
-            },
-          ],
         },
         security: {
           twoFactorEnabled: false,
@@ -92,26 +71,6 @@ async function generateDummyData() {
         isClassRepresentative: false,
         activity: {
           lastLogin: new Date(),
-          totalLogins: [
-            {
-              loginTime: new Date(),
-              attemptsReached: 0,
-              maxAttemptsReached: false,
-              metadata: {
-                ipAddress: "192.168.1.101",
-                userAgent: "Mozilla/5.0",
-                browser: { name: "Firefox", version: "119.0", major: "119" },
-                os: { name: "Windows", version: "11" },
-                device: { type: "desktop" },
-                location: {
-                  country: "India",
-                  region: "Karnataka",
-                  city: "Bangalore",
-                  timezone: "Asia/Kolkata",
-                },
-              },
-            },
-          ],
         },
         security: {
           twoFactorEnabled: false,
@@ -137,26 +96,6 @@ async function generateDummyData() {
         },
         activity: {
           lastLogin: new Date(),
-          totalLogins: [
-            {
-              loginTime: new Date(),
-              attemptsReached: 0,
-              maxAttemptsReached: false,
-              metadata: {
-                ipAddress: "192.168.1.102",
-                userAgent: "Mozilla/5.0",
-                browser: { name: "Chrome", version: "120.0", major: "120" },
-                os: { name: "MacOS", version: "14.0" },
-                device: { type: "desktop" },
-                location: {
-                  country: "India",
-                  region: "Karnataka",
-                  city: "Bangalore",
-                  timezone: "Asia/Kolkata",
-                },
-              },
-            },
-          ],
         },
         security: {
           twoFactorEnabled: false,
@@ -186,26 +125,6 @@ async function generateDummyData() {
         },
         activity: {
           lastLogin: new Date(),
-          totalLogins: [
-            {
-              loginTime: new Date(),
-              attemptsReached: 0,
-              maxAttemptsReached: false,
-              metadata: {
-                ipAddress: "192.168.1.103",
-                userAgent: "Mozilla/5.0",
-                browser: { name: "Safari", version: "17.0", major: "17" },
-                os: { name: "iOS", version: "17.0" },
-                device: { type: "mobile", vendor: "Apple", model: "iPhone 15" },
-                location: {
-                  country: "India",
-                  region: "Telangana",
-                  city: "Hyderabad",
-                  timezone: "Asia/Kolkata",
-                },
-              },
-            },
-          ],
         },
         security: {
           twoFactorEnabled: false,
@@ -237,26 +156,6 @@ async function generateDummyData() {
         isClassRepresentative: false,
         activity: {
           lastLogin: new Date(),
-          totalLogins: [
-            {
-              loginTime: new Date(),
-              attemptsReached: 0,
-              maxAttemptsReached: false,
-              metadata: {
-                ipAddress: "192.168.1.104",
-                userAgent: "Mozilla/5.0",
-                browser: { name: "Edge", version: "120.0", major: "120" },
-                os: { name: "Windows", version: "11" },
-                device: { type: "desktop" },
-                location: {
-                  country: "India",
-                  region: "Maharashtra",
-                  city: "Mumbai",
-                  timezone: "Asia/Kolkata",
-                },
-              },
-            },
-          ],
         },
         security: {
           twoFactorEnabled: false,

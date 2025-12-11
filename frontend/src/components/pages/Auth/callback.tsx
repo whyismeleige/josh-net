@@ -42,7 +42,7 @@ export default function AuthCallback() {
           dispatch(setCredentials(data));
           router.replace(`/${data.user.role}/dashboard`);
         })
-        .catch((error) => {
+        .catch(() => {
           dispatch(
             addNotification({
               title: "Error",

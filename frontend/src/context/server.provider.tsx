@@ -1,5 +1,9 @@
 import { createContext, ReactNode, useContext, useState } from "react";
-import { ServerContextType, ServerData } from "../types/server.types";
+import {
+  ChannelData,
+  ServerContextType,
+  ServerData,
+} from "../types/server.types";
 import { BACKEND_URL } from "../utils/config";
 import { useStudentContext } from "./student.provider";
 import { useAppSelector } from "../hooks/redux";
@@ -11,12 +15,27 @@ export function ServerProvider({ children }: { children: ReactNode }) {
 
   const [serverData, setServerData] = useState<ServerData[]>([]);
   const [currentServer, setCurrentServer] = useState<ServerData | null>(null);
-  const [channelData, setChannelData] = useState();
-  const [currentChannel, setCurrentChannel] = useState();
+  const [channelData, setChannelData] = useState<ChannelData[]>([]);
+  const [currentChannel, setCurrentChannel] = useState<ChannelData | null>(
+    null
+  );
 
-  const getChannelData = (channelId: string) => {
-    fetch(``)
-  }
+  console.log(currentChannel);
+
+  const getChannelData = (serverId: string) => {
+    fetch(`${BACKEND_URL}/api/v1/server/channel/list?serverId=${serverId}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        console.log(data);
+        setChannelData(data.channels);
+        setCurrentChannel(data.channels[0]);
+      });
+  };
 
   const getServerList = () => {
     fetch(`${BACKEND_URL}/api/v1/server/list`, {
@@ -27,9 +46,11 @@ export function ServerProvider({ children }: { children: ReactNode }) {
     })
       .then((response) => response.json())
       .then((data) => {
+        console.log(data);
         setServerData(data.servers);
         if (data.servers[0]) {
           setCurrentServer(data.servers[0]);
+          getChannelData(data.servers[0]._id);
         }
       });
   };
@@ -39,6 +60,8 @@ export function ServerProvider({ children }: { children: ReactNode }) {
     getServerList,
     currentServer,
     setCurrentServer,
+    channelData,
+    currentChannel,
   };
 
   return (

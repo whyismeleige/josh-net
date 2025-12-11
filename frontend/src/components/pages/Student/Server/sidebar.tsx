@@ -15,13 +15,15 @@ import {
   Mic,
   Headphones,
   Settings,
+  Tv,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useServerContext } from "@/src/context/server.provider";
 
 export default function ServerSidebar() {
-  const { serverData, setCurrentServer, currentServer } = useServerContext();
+  const { serverData, setCurrentServer, currentServer, channelData, currentChannel } =
+    useServerContext();
 
   return (
     <div className="flex w-fit h-full border-r bg-sidebar">
@@ -75,16 +77,16 @@ export default function ServerSidebar() {
 
         {/* Mail List */}
         <div className="flex-1 overflow-y-auto">
-          {/* {mails.map((item, index) => (
+          {channelData.map((channel) => (
             <a
               href="#"
-              key={index}
+              key={channel._id}
               className="flex gap-2 border-b p-2 text-sm hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
             >
-              {item.icon && <item.icon size={20} />}
-              {item.title}
+              <Tv size={20} />
+              {channel.name}
             </a>
-          ))} */}
+          ))}
         </div>
       </div>
 

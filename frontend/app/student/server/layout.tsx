@@ -11,7 +11,7 @@ export default function Layout({ children }: { children: ReactNode }) {
     <ServerProvider>
       <section className="flex h-full w-full">
         <ServerSidebar />
-        <div className="w-full h-full">
+        <div className="w-full h-full flex flex-col">
           <ServerHeader />
           {children}
         </div>

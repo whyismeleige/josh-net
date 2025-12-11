@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Providers } from "@/src/store/providers";
 import { NotificationContainer } from "@/src/components/shared/Notification/NotificationContainer";
-import { StudentProvider } from "@/src/context/student.provider";
 
 export const metadata: Metadata = {
   title: "Josh-Net",

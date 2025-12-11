@@ -14,5 +14,6 @@ router.get("/list", controller.listServers);
 
 // Channel Routes
 router.post("/channel/create", controller.createChannel);
+router.get("/channel/list", controller.listChannels);
 
 module.exports = router;

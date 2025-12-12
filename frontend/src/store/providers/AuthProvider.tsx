@@ -2,7 +2,7 @@
 
 import { useAppDispatch, useAppSelector } from "@/src/hooks/redux";
 import { Role } from "@/src/types/auth.types";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { ReactNode, useEffect } from "react";
 import { verifyAuth } from "../slices/auth.slice";
 
@@ -30,7 +30,7 @@ export default function AuthProvider({
 
   useEffect(() => {
     dispatch(verifyAuth());
-  }, []);
+  }, [dispatch]);
 
   useEffect(() => {
     if (!isLoading) {

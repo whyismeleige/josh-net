@@ -1,176 +1,110 @@
 "use client";
 import { Input } from "@/components/ui/input";
 import { useServerContext } from "@/src/context/server.provider";
+import RightSidebar from "./right-sidebar";
+import { CirclePlus, ImageIcon, Laugh, Send, Sticker } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAppSelector } from "@/src/hooks/redux";
 import { usePageTitle } from "@/src/hooks/usePageTitle";
-import { BACKEND_URL } from "@/src/utils/config";
-import { ChangeEvent, useEffect, useState } from "react";
-import { io } from "socket.io-client";
-import RightSidebar from "./right-sidebar";
-import {
-  CirclePlus,
-  ImageIcon,
-  Laugh,
-  Search,
-  Sticker,
-  StickyNote,
-} from "lucide-react";
+import { useEffect, useRef } from "react";
 
-// Dummy messages data
-const messages = [
-  {
-    id: 1,
-    user: "Alice",
-    text: "Hey everyone! How are you doing today?",
-    time: "10:30 AM",
-    avatar: "A",
-  },
-  {
-    id: 2,
-    user: "Bob",
-    text: "Doing great! Just finished a big project.",
-    time: "10:32 AM",
-    avatar: "B",
-  },
-  {
-    id: 3,
-    user: "Charlie",
-    text: "Awesome! Congratulations Bob! 🎉",
-    time: "10:33 AM",
-    avatar: "C",
-  },
-  {
-    id: 4,
-    user: "Alice",
-    text: "That's amazing Bob! What was the project about?",
-    time: "10:35 AM",
-    avatar: "A",
-  },
-  {
-    id: 5,
-    user: "Bob",
-    text: "It was a new feature for our app. Took about 3 weeks to complete.",
-    time: "10:37 AM",
-    avatar: "B",
-  },
-  {
-    id: 6,
-    user: "Diana",
-    text: "Nice work! Is it live yet?",
-    time: "10:40 AM",
-    avatar: "D",
-  },
-  {
-    id: 7,
-    user: "Bob",
-    text: "Not yet, going through QA now. Should be live next week!",
-    time: "10:42 AM",
-    avatar: "B",
-  },
-  {
-    id: 8,
-    user: "Charlie",
-    text: "Can't wait to try it out!",
-    time: "10:43 AM",
-    avatar: "C",
-  },
-  {
-    id: 9,
-    user: "Alice",
-    text: "Same here! Keep us posted Bob.",
-    time: "10:45 AM",
-    avatar: "A",
-  },
-  {
-    id: 10,
-    user: "Eve",
-    text: "Hey folks! Just joining. What did I miss?",
-    time: "10:50 AM",
-    avatar: "E",
-  },
-  {
-    id: 11,
-    user: "Diana",
-    text: "Bob just finished a big project!",
-    time: "10:51 AM",
-    avatar: "D",
-  },
-  {
-    id: 12,
-    user: "Eve",
-    text: "Oh that's awesome! Congrats Bob! 🎊",
-    time: "10:52 AM",
-    avatar: "E",
-  },
-  {
-    id: 13,
-    user: "Bob",
-    text: "Thanks everyone for the support! 😊",
-    time: "10:55 AM",
-    avatar: "B",
-  },
-  {
-    id: 14,
-    user: "Alice",
-    text: "We should celebrate when it goes live!",
-    time: "11:00 AM",
-    avatar: "A",
-  },
-  {
-    id: 15,
-    user: "Charlie",
-    text: "Definitely! Let's plan something.",
-    time: "11:02 AM",
-    avatar: "C",
-  },
-];
+const getInitials = (name: string) => {
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+};
 
+const formatTime = (timestamp: string) => {
+  const date = new Date(timestamp);
+  return date.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
 export default function StudentServer() {
-  const { getServerList } = useServerContext();
+  const { user } = useAppSelector((state) => state.auth);
+  const {
+    messageInput,
+    setMessageInput,
+    sendMessage,
+    messages,
+    currentServer,
+  } = useServerContext();
 
-  const [value, setValue] = useState("");
-  const socket = io(BACKEND_URL);
-
-  usePageTitle("Student Server");
-
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setValue(e.target.value);
-    socket.emit("chat-message", e.target.value);
-  };
+  const endOfChatRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    getServerList();
-  }, []);
+    endOfChatRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  usePageTitle(currentServer?.name || "Student Server");
   return (
-    <div className="flex flex-1">
-      <div className="flex-1 p-1">
-        <div className="space-y-4 overflow-y-scroll">
+    <div className="flex flex-1 h-full min-h-0">
+      <div className="flex-1 p-1 flex flex-col">
+        <div className="flex-1 overflow-y-auto space-y-4 p-1 custom-scrollbar">
           {messages.map((message) => (
-            <div key={message.id} className="flex gap-3">
-              <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold flex-shrink-0">
-                {message.avatar}
-              </div>
-              <div className="flex-1">
-                <div className="flex items-baseline gap-2">
-                  <span className="font-semibold text-sm">{message.user}</span>
-                  <span className="text-xs text-gray-500">{message.time}</span>
+            <div
+              key={message._id}
+              className={`flex ${
+                message.userId._id === user?._id && "flex-row-reverse"
+              } gap-3 group p-3 rounded-lg transition-colors`}
+            >
+              <Avatar className="h-10 w-10 rounded-full flex-shrink-0">
+                <AvatarImage
+                  src={message.userId.avatarURL}
+                  alt={message.userId.name}
+                />
+                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-sm font-medium">
+                  {getInitials(message.userId.name)}
+                </AvatarFallback>
+              </Avatar>
+
+              <div className="min-w-0">
+                <div
+                  className={`flex ${
+                    message.userId._id === user?._id && "flex-row-reverse"
+                  } items-baseline gap-2 mb-1`}
+                >
+                  <span className="font-semibold text-sm">
+                    {message.userId._id === user?._id
+                      ? "Me"
+                      : message.userId.name}
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    {formatTime(message.timestamp)}
+                  </span>
+                  {message.editedTimestamp && (
+                    <span className="text-xs text-gray-400 italic">
+                      (edited)
+                    </span>
+                  )}
                 </div>
-                <p className="text-sm mt-1">{message.text}</p>
+
+                <p className=" text-sm leading-relaxed break-words">
+                  {message.content}
+                </p>
               </div>
             </div>
           ))}
+          <div ref={endOfChatRef}/>
         </div>
-        <div className="relative">
+        <div className="relative m-2">
           <CirclePlus
             size={20}
             className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 cursor-pointer"
           />
           <Input
             id="text"
-            className="pl-10 h-1.5/2"
+            className="pl-10 h-14 rounded-xl"
             placeholder="Enter your Message"
+            value={messageInput}
+            onChange={(e) => setMessageInput(e.target.value)}
           />
           <div className="flex gap-3 absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer">
+            <Send size={20} onClick={sendMessage} />
             <ImageIcon size={20} />
             <Sticker size={20} />
             <Laugh size={20} />

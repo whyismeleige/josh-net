@@ -14,7 +14,7 @@ export const validatePasswords = (
   return password === confirmPassword;
 };
 
-export const sendOTPtoEmail = async (email: string | undefined, purpose: VerificationPurpose) => {
+export const SendOTPtoEmail = async (email: string | undefined, purpose: VerificationPurpose) => {
   const dispatch = useAppDispatch();
 
     if (!email) {
@@ -40,11 +40,11 @@ export const sendOTPtoEmail = async (email: string | undefined, purpose: Verific
         );
       } 
 
-    } catch (error: any | unknown) {
+    } catch (error) {
       dispatch(
         addNotification({
           title: "Error",
-          description: error,
+          description: "Error in Sending OTP",
           type: "error",
         })
       );

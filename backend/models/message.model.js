@@ -9,6 +9,7 @@ const MessageSchema = new mongoose.Schema(
     type: {
       type: String,
       enum: ["text", "image", "file", "embed"],
+      default: "text",
     },
     content: {
       type: String,
@@ -36,8 +37,18 @@ const MessageSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-    toJSON: true,
-    toObject: true,
+    toJSON: {
+      transform: function (doc, ret) {
+        delete ret.__v;
+        return ret;
+      },
+    },
+    toObject: {
+      transform: function (doc, ret) {
+        delete ret.__v;
+        return ret;
+      },
+    },
   }
 );
 

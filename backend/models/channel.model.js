@@ -33,7 +33,7 @@ const ChannelSchema = new mongoose.Schema(
     messages: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Channel",
+        ref: "Message",
       },
     ],
   },
@@ -62,5 +62,7 @@ ChannelSchema.statics.createNewChannel = async function (data, userId) {
     createdBy: userId,
   });
 };
+
+
 
 module.exports = mongoose.model("Channel", ChannelSchema);

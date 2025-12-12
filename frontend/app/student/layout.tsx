@@ -22,9 +22,9 @@ export default function StudentLayout({ children }: { children: ReactNode }) {
         }
       >
         <StudentSidebar />
-        <SidebarInset>
+        <SidebarInset className="flex flex-col h-screen overflow-hidden">
           <StudentHeader />
-          {children}
+          <div className="flex-1 w-full min-h-0">{children}</div>
         </SidebarInset>
       </SidebarProvider>
     </StudentProvider>

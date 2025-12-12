@@ -20,7 +20,7 @@ export default function PublicRoute({ children }: { children: ReactNode }) {
     if (!isLoading && isAuthenticated && user) {
         router.replace(`${user.role}/dashboard`);
     }
-  }, [isLoading, isAuthenticated, user]);
+  }, [isLoading, isAuthenticated, user, router]);
 
   if (isLoading) {
     return (

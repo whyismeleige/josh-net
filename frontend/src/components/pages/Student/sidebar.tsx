@@ -19,11 +19,9 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarRail,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useAppSelector } from "@/src/hooks/redux";
-import { SiChatbot } from "@icons-pack/react-simple-icons";
 import {
   BarChart,
   Bell,
@@ -32,7 +30,6 @@ import {
   Building,
   CreditCard,
   Database,
-  DotSquare,
   EllipsisVertical,
   HelpCircle,
   LogOut,
@@ -90,14 +87,9 @@ const footerItems = [
 ];
 
 export default function StudentSidebar() {
-  // const { user } = useAppSelector((state) => state.auth);
+  const { user } = useAppSelector((state) => state.auth);
   const { isMobile } = useSidebar();
 
-  const user = {
-    name: "Piyush Jain",
-    email: "121423408006@josephscollege.ac.in",
-    avatarURL: "https://api.dicebear.com/9.x/pixel-art/svg",
-  };
 
   return (
     <Sidebar>

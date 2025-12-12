@@ -7,5 +7,5 @@ export function usePageTitle(title: string) {
 
   useEffect(() => {
     setHeaderTitle(title);
-  }, []);
+  }, [setHeaderTitle, title]);
 }

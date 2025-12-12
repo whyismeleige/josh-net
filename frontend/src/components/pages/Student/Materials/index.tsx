@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
@@ -21,15 +20,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useStudentContext } from "@/src/context/student.provider";
-import { useAppSelector } from "@/src/hooks/redux";
 import {
-  CourseWorkData,
   DirectionOptions,
   Files,
   FolderOptions,
   SortOptions,
 } from "@/src/types/material.types";
-import { BACKEND_URL } from "@/src/utils/config";
 import {
   Download,
   EllipsisVertical,
@@ -72,7 +68,7 @@ export default function StudentMaterials() {
 
   useEffect(() => {
     fetchCourseWork();
-  }, []);
+  }, [fetchCourseWork]);
 
   const fileStructure: Files[] = getCurrentItems();
 
@@ -230,7 +226,7 @@ export default function StudentMaterials() {
   );
 }
 
-const FilterDialog = () => {};
+// const FilterDialog = () => {};
 
 const SortingMenu = () => {
   const { sortObject, setSortObject } = useStudentContext();

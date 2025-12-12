@@ -6,7 +6,6 @@ import {
 } from "@/components/ui/alert";
 import {
   Notification as NotificationType,
-  NotificationType as NotificationTypeEnum,
 } from "@/src/types/notification.types";
 import { FC, useEffect, useState } from "react";
 import {
@@ -14,7 +13,6 @@ import {
   CircleCheckBig,
   CircleX,
   Info,
-  MessageCircleWarning,
   TriangleAlert,
   X,
 } from "lucide-react";
@@ -26,7 +24,6 @@ interface NotificationProps {
 }
 
 const Notification: FC<NotificationProps> = ({ notification }) => {
-  const [isVisible, setIsVisible] = useState(false);
   const [timeLeft, setTimeLeft] = useState(100);
 
   const dispatch = useAppDispatch();
@@ -46,7 +43,7 @@ const Notification: FC<NotificationProps> = ({ notification }) => {
     }, 50);
 
     return () => clearInterval(interval);
-  }, [notification]);
+  }, [notification, dispatch]);
 
   const getIcon = () => {
     switch (notification.type) {

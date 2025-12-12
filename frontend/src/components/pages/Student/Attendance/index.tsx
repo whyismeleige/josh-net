@@ -57,6 +57,7 @@ export function HeatmapComponent() {
     const series = [];
     for (let i = 0; i < count; i++) {
       const x = `W${i + 1}`;
+      // eslint-disable-next-line react-hooks/purity
       const y =
         Math.floor(Math.random() * (yrange.max - yrange.min + 1)) + yrange.min;
       series.push({ x, y });
@@ -64,7 +65,7 @@ export function HeatmapComponent() {
     return series;
   };
 
-  const [series] = useState([ 
+  const [series] = useState([
     { name: "Jul", data: generateData(12, { min: 0, max: 90 }) },
     { name: "Aug", data: generateData(12, { min: 0, max: 90 }) },
     { name: "Sep", data: generateData(12, { min: 0, max: 90 }) },
@@ -80,9 +81,9 @@ export function HeatmapComponent() {
       toolbar: {
         show: true,
       },
-      background: 'var(--card)',
-      foreColor: 'var(--card-foreground)',
-      fontFamily: 'var(--font-sans)'
+      background: "var(--card)",
+      foreColor: "var(--card-foreground)",
+      fontFamily: "var(--font-sans)",
     },
     plotOptions: {
       heatmap: {
@@ -98,7 +99,6 @@ export function HeatmapComponent() {
             { from: 81, to: 90, name: "Extreme", color: "#FF0000" },
           ],
         },
-        
       },
     },
     dataLabels: {
@@ -107,7 +107,7 @@ export function HeatmapComponent() {
     stroke: {
       width: 1,
     },
-    
+
     title: {
       text: "Monthly Attendance Heatmap",
       align: "center",

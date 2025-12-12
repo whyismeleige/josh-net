@@ -2,16 +2,14 @@
 import ServerHeader from "@/src/components/pages/Student/Server/header";
 import ServerSidebar from "@/src/components/pages/Student/Server/sidebar";
 import { ServerProvider } from "@/src/context/server.provider";
-import { usePageTitle } from "@/src/hooks/usePageTitle";
 import { ReactNode } from "react";
 
 export default function Layout({ children }: { children: ReactNode }) {
-  usePageTitle("Server");
   return (
     <ServerProvider>
-      <section className="flex h-full w-full">
+      <section className="flex h-full w-full overflow-hidden">
         <ServerSidebar />
-        <div className="w-full h-full flex flex-col">
+        <div className="flex flex-col w-full h-full min-w-0">
           <ServerHeader />
           {children}
         </div>

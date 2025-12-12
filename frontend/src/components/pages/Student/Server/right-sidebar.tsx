@@ -1,20 +1,20 @@
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useServerContext } from "@/src/context/server.provider";
-import { useStudentContext } from "@/src/context/student.provider";
-import { Tv } from "lucide-react";
 
 export default function RightSidebar() {
-    const { channelData } = useServerContext();
+  const { currentServer } = useServerContext();
   return (
     <>
-      {channelData.map((channel) => (
-        <a
-          href="#"
-          key={channel._id}
-          className="flex gap-2 border-b p-2 text-sm hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
-        >
-          <Tv size={20} />
-          {channel.name}
-        </a>
+      {currentServer?.users.map((user) => (
+        <div key={user._id} className="flex items-center gap-1 p-2">
+          <Avatar className="h-8 w-8 rounded-lg">
+            <AvatarImage src={user?.avatarURL} alt={user?.name} />
+            <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+          </Avatar>
+          <div className="grid flex-1 text-left text-sm leading-tight">
+            <span className="truncate font-medium">{user?.name}</span>
+          </div>
+        </div>
       ))}
     </>
   );

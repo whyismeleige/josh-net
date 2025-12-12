@@ -31,7 +31,8 @@ function insertPath(
     };
 
     if (isFile && metadata) {
-      (node.description = metadata.description), (node.s3URL = metadata.s3URL);
+      node.description = metadata.description;
+      node.s3URL = metadata.s3URL;
       node.mimetype = metadata.mimetype;
       node.size = metadata.size;
       node.contentType = metadata.contentType;
@@ -258,7 +259,7 @@ export function StudentProvider({ children }: { children: ReactNode }) {
     setSearchInput,
     downloadFiles,
     handleFileClick,
-    fileBlob
+    fileBlob,
   };
 
   return (

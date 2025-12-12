@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { FileText, FileImage, FileCode, Download, ZoomIn, ZoomOut, X } from 'lucide-react';
 import { useStudentContext } from '@/src/context/student.provider';
+import Image from 'next/image';
 
 export default function FileViewer() {
   const { fileBlob } = useStudentContext();
@@ -136,7 +137,7 @@ export default function FileViewer() {
 
         <div className={`${isFullscreen ? 'fixed inset-0 z-50 bg-background' : 'p-4 bg-muted/30'}`}>
           <div className="flex items-center justify-center min-h-[400px]">
-            <img 
+            <Image
               src={fileURL} 
               alt="Content" 
               className="max-w-full h-auto rounded-md shadow-lg transition-transform"

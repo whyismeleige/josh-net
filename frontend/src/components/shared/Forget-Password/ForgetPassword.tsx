@@ -90,11 +90,12 @@ export const ForgetPasswordDialog: FC<ForgetPasswordDialogProps> = ({
 
         onOpenChange(false);
       }
-    } catch (error: any | unknown) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Error in Auth";
       dispatch(
         addNotification({
           title: "Error",
-          description: error,
+          description: message,
           type: "error",
         })
       );

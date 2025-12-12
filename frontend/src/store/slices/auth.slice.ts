@@ -120,8 +120,10 @@ export const loginUser = createAsyncThunk(
           refreshToken: data.refreshToken,
         },
       };
-    } catch (error: any | unknown) {
-      return rejectWithValue(error.message);
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "An error occurred";
+      return rejectWithValue(message);
     }
   }
 );
@@ -145,8 +147,10 @@ export const sendOTP = createAsyncThunk<
     if (data.type !== "success") return rejectWithValue(data.message);
 
     return { ...data, purpose: credentials.purpose };
-  } catch (error: any | unknown) {
-    return rejectWithValue(error.message);
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error ? error.message : "An error occurred";
+    return rejectWithValue(message);
   }
 });
 
@@ -169,8 +173,10 @@ export const verifyOTP = createAsyncThunk<any, string, { state: RootState }>(
       if (data.type !== "success") return rejectWithValue(data.message);
 
       return data;
-    } catch (error: any | unknown) {
-      return rejectWithValue(error.message);
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "An error occurred";
+      return rejectWithValue(message);
     }
   }
 );
@@ -196,8 +202,10 @@ export const changePassword = createAsyncThunk<
     if (data.type !== "success") return rejectWithValue(data.message);
 
     return data;
-  } catch (error: any | unknown) {
-    return rejectWithValue(error.message);
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error ? error.message : "An error occurred";
+    return rejectWithValue(message);
   }
 });
 
@@ -222,8 +230,10 @@ export const fetchUserProfile = createAsyncThunk(
       const userData = await response.json();
 
       return userData;
-    } catch (error: any | unknown) {
-      return rejectWithValue("Error in Fetching User Profile");
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "An error occurred";
+      return rejectWithValue(message);
     }
   }
 );
@@ -255,9 +265,11 @@ export const refreshToken = createAsyncThunk(
         ...data,
         ...userData,
       };
-    } catch (error: any | unknown) {
+    } catch (error: unknown) {
       TokenService.clearTokens();
-      return rejectWithValue(error.message);
+      const message =
+        error instanceof Error ? error.message : "An error occurred";
+      return rejectWithValue(message);
     }
   }
 );
@@ -266,7 +278,7 @@ export const verifyAuth = createAsyncThunk<LocalAuthResponse>(
   "auth/verifyAuth",
   async (_, { dispatch, rejectWithValue }) => {
     try {
-      let accessToken = TokenService.getAccessToken();
+      const accessToken = TokenService.getAccessToken();
 
       if (!accessToken || TokenService.isTokenExpired(accessToken)) {
         const result = await dispatch(refreshToken()).unwrap();
@@ -279,8 +291,10 @@ export const verifyAuth = createAsyncThunk<LocalAuthResponse>(
         accessToken,
         ...data,
       };
-    } catch (error: any | unknown) {
-      return rejectWithValue(error.message);
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "An error occurred";
+      return rejectWithValue(message);
     }
   }
 );

@@ -16,6 +16,8 @@ export type ServerType =
   | "study_group"
   | "general";
 
+export type MessageType = "text" | "image" | "file" | "embed";
+
 export interface ServerData {
   _id: string;
   name: string;
@@ -42,11 +44,31 @@ export interface ChannelData {
   updatedAt: string;
 }
 
+export interface MessageData {
+  _id: string;
+  content: string;
+  createdAt: string;
+  deleted: string;
+  deletedAt?: string | null;
+  editedTimestamp?: string | null;
+  timestamp: string;
+  type: MessageType;
+  updatedAt: string;
+  userId: User;
+}
+
 export interface ServerContextType {
   serverData: ServerData[];
   getServerList: () => void;
   currentServer: ServerData | null;
-  setCurrentServer: (data: ServerData) => void;
   channelData: ChannelData[];
   currentChannel: ChannelData | null;
+  changeServers: (server: ServerData) => void;
+  changeChannels: (channel: ChannelData) => void;
+  messageInput: string;
+  setMessageInput: (value: string) => void;
+  sendMessage: () => void;
+  messages: MessageData[];
+  leftSidebar: boolean;
+  setLeftSidebar: (toggle: boolean) => void;
 }

@@ -55,7 +55,7 @@ export default function AuthCallback() {
     }
 
     router.replace("/auth");
-  }, []);
+  }, [code, dispatch, router]);
   return (
     <div className="flex justify-center gap-2 pt-20 h-screen w-screen text-4xl font-extrabold tracking-tight text-balance">
       <Spinner className="size-9" />

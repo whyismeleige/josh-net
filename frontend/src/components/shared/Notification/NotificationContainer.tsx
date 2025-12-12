@@ -11,6 +11,7 @@ export const NotificationContainer = () => {
 
   useEffect(() => {
     setMounted(true);
+    return () => setMounted(false);
   }, []);
 
   if (!mounted) return null;

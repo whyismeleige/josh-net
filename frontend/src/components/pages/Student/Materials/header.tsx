@@ -7,30 +7,12 @@ import {
 } from "@/components/ui/breadcrumb";
 import {
   DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useStudentContext } from "@/src/context/student.provider";
-import { ChevronDownIcon, Grid, Home, List } from "lucide-react";
+import { Grid, Home, List } from "lucide-react";
 import { Fragment } from "react/jsx-runtime";
-
-const data = [
-  {
-    title: "Home",
-    children: [
-      {
-        title: "Some Item",
-        children: [],
-      },
-    ],
-  },
-  {
-    title: "Folder",
-    children: [],
-  },
-];
 
 export default function MaterialsHeader() {
   const { materialsDisplay, setMaterialsDisplay, currentPath, handleBreadCrumbClick } = useStudentContext();

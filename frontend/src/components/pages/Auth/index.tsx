@@ -21,6 +21,7 @@ import { OTPDialog } from "../../shared/OTP-Dialog/OTPDialog";
 import useGoogleAuth from "@/src/hooks/useGoogleAuth";
 import { ForgetPasswordDialog } from "../../shared/Forget-Password/ForgetPassword";
 import { LocalAuthResponse, Mode } from "@/src/types/auth.types";
+import Image from "next/image";
 
 export default function AuthPage() {
   const searchParams = useSearchParams();
@@ -30,7 +31,7 @@ export default function AuthPage() {
   const { signInWithGoogle } = useGoogleAuth();
   const { isLoading } = useAppSelector((state) => state.auth);
 
-  let query = searchParams.get("mode");
+  const query = searchParams.get("mode");
 
   const [mode, toggleMode] = useState<Mode>((query as Mode) || "Login");
   const [email, setEmail] = useState("");
@@ -69,12 +70,12 @@ export default function AuthPage() {
       );
 
       toggleOpenDialog(true);
-
-    } catch (error: any | unknown) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Error in Auth";
       dispatch(
         addNotification({
           title: "Error",
-          description: error,
+          description: message,
           type: "error",
         })
       );

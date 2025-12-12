@@ -18,7 +18,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { useAppDispatch, useAppSelector } from "@/src/hooks/redux";
 import { verifyOTP } from "@/src/store/slices/auth.slice";
 import { addNotification } from "@/src/store/slices/notification.slice";
-import { sendOTPtoEmail } from "@/src/utils/auth.utils";
+import { SendOTPtoEmail } from "@/src/utils/auth.utils";
 import { useRouter } from "next/navigation";
 import { FC, useState } from "react";
 
@@ -94,11 +94,12 @@ export const OTPDialog: FC<OTPDialogProps> = ({
           router.replace(`${response.user.role}/dashboard`);
           break;
       }
-    } catch (error: any | unknown) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Error in Auth"
       dispatch(
         addNotification({
           title: "Error",
-          description: error,
+          description: message,
           type: "error",
         })
       );
@@ -132,7 +133,7 @@ export const OTPDialog: FC<OTPDialogProps> = ({
           </InputOTPGroup>
         </InputOTP>
         <span
-          onClick={() => sendOTPtoEmail(email, purpose)}
+          onClick={() => SendOTPtoEmail(email, purpose)}
           className="text-center text-sm cursor-pointer hover:underline"
         >
           Resend OTP

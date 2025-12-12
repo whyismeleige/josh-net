@@ -140,3 +140,39 @@ exports.listChannels = async (req, res) => {
     });
   }
 };
+
+exports.listMessages = async (req, res) => {
+  try {
+    const channelId = req.query.channelId;
+
+    const channel = await Channel.findById(channelId).populate({
+      path: "messages",
+      populate: {
+        path: "userId",
+        transform: (doc) => {
+          if (!doc) return doc;
+          return sanitizeUser(doc);
+        },
+      },
+    });
+
+    if (!channel) {
+      return res.status(400).send({
+        message: "Channel does not exist",
+        type: "error",
+      });
+    }
+
+    res.status(200).send({
+      message: "Messages retrieved successfully",
+      type: "success",
+      messages: channel.messages,
+    });
+  } catch (error) {
+    console.error("Error in Retrieving Messages", error);
+    res.status(500).send({
+      message: error.message || "Server Error",
+      type: "error",
+    });
+  }
+};

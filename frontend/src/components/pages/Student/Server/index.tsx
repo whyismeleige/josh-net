@@ -89,7 +89,7 @@ export default function StudentServer() {
               </div>
             </div>
           ))}
-          <div ref={endOfChatRef}/>
+          <div ref={endOfChatRef} />
         </div>
         <div className="relative m-2">
           <CirclePlus
@@ -102,6 +102,9 @@ export default function StudentServer() {
             placeholder="Enter your Message"
             value={messageInput}
             onChange={(e) => setMessageInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") sendMessage();
+            }}
           />
           <div className="flex gap-3 absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer">
             <Send size={20} onClick={sendMessage} />
@@ -111,9 +114,7 @@ export default function StudentServer() {
           </div>
         </div>
       </div>
-      <div className="border w-fit h-full">
-        <RightSidebar />
-      </div>
+      <RightSidebar />
     </div>
   );
 }

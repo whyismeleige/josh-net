@@ -90,7 +90,6 @@ export default function StudentSidebar() {
   const { user } = useAppSelector((state) => state.auth);
   const { isMobile } = useSidebar();
 
-
   return (
     <Sidebar>
       <SidebarHeader>

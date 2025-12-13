@@ -232,7 +232,6 @@ export function StudentProvider({ children }: { children: ReactNode }) {
       }
     );
     const blob = await response.blob();
-    console.log(blob);
     setFileBlob(blob);
   };
 

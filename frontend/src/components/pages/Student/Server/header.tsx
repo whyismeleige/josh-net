@@ -4,25 +4,35 @@ import { useServerContext } from "@/src/context/server.provider";
 import { Bell, Bookmark, PanelLeft, Pin, Search, Users } from "lucide-react";
 import { getChannelIcon } from "./sidebar";
 import { Separator } from "@/components/ui/separator";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const buttonsData = [
   {
     icon: Bell,
-    content: "Open Notifications"
+    content: "Open Notifications",
   },
   {
     icon: Pin,
-    content: "Pin"
+    content: "Pin",
   },
   {
     icon: Users,
-    content: "Server Member"
+    content: "Server Members",
   },
 ];
 
 export default function ServerHeader() {
-  const { currentChannel, setLeftSidebar, leftSidebar } = useServerContext();
+  const {
+    currentChannel,
+    setLeftSidebar,
+    leftSidebar,
+    rightSidebar,
+    setRightSidebar,
+  } = useServerContext();
   return (
     <header className="flex shrink-0 items-center justify-between border-b gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
       <div className="flex items-center justify-between m-2">
@@ -61,14 +71,18 @@ export default function ServerHeader() {
           />
           <Input id="text" className="pl-10 h-1.5/2" placeholder="Search" />
         </div>
-        <Tooltip >
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon-lg">
-                <Bookmark/>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Bookmark</TooltipContent>
-          </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              onClick={() => setRightSidebar(!rightSidebar)}
+              variant="ghost"
+              size="icon-lg"
+            >
+              <Bookmark />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Bookmark</TooltipContent>
+        </Tooltip>
       </div>
     </header>
   );

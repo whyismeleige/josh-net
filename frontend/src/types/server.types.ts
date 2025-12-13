@@ -71,4 +71,6 @@ export interface ServerContextType {
   messages: MessageData[];
   leftSidebar: boolean;
   setLeftSidebar: (toggle: boolean) => void;
+  rightSidebar: boolean;
+  setRightSidebar: (toggle: boolean) => void;
 }

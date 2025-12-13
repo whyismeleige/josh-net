@@ -14,13 +14,19 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useServerContext } from "@/src/context/server.provider";
-import { ChannelType } from "@/src/types/server.types";
+import { ChannelData, ChannelType } from "@/src/types/server.types";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useAppSelector } from "@/src/hooks/redux";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 export const getChannelIcon = (channelType: ChannelType) => {
   switch (channelType) {
@@ -44,6 +50,7 @@ export default function ServerSidebar() {
     channelData,
     changeServers,
     changeChannels,
+    currentChannel,
     leftSidebar,
   } = useServerContext();
 
@@ -126,27 +133,17 @@ export default function ServerSidebar() {
             </div>
           </div>
 
-          {/* Mail List */}
-          <div className="flex-1 overflow-y-auto">
-            {channelData.map((channel) => (
-              <span
-                key={channel._id}
-                onClick={() => changeChannels(channel)}
-                className="flex gap-2 border-b p-2 text-sm cursor-pointer hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
-              >
-                {getChannelIcon(channel.type)}
-                {channel.name}
-              </span>
-            ))}
-          </div>
+          <ChannelList
+            channelData={channelData}
+            changeChannels={changeChannels}
+            currentChannel={currentChannel}
+          />
+
         </div>
 
         <div className="absolute bottom-0 left-0 bg-card border-t p-2 m-1 mb-3 rounded-xl flex items-center gap-2 shadow-lg">
           <Avatar className="rounded-lg">
-            <AvatarImage
-              src={user?.avatarURL}
-              alt={user?.name}
-            />
+            <AvatarImage src={user?.avatarURL} alt={user?.name} />
             <AvatarFallback className="rounded-lg">CN</AvatarFallback>
           </Avatar>
           <div className="grid flex-1 text-left text-sm leading-tight">
@@ -165,5 +162,56 @@ export default function ServerSidebar() {
         </div>
       </div>
     </div>
+  );
+}
+
+interface ChannelListProps {
+  channelData: ChannelData[];
+  changeChannels: (channel: ChannelData) => void;
+  currentChannel?: ChannelData | null;
+}
+
+const getChannelGroupName = (type: ChannelType) => {
+  switch (type) {
+    case "guild_text":
+      return "Text Channels";
+    case "guild_announcement":
+      return "Announcements";
+  }
+};
+
+export function ChannelList({ channelData, changeChannels, currentChannel }: ChannelListProps) {
+  const channelMap = new Map<ChannelType, ChannelData[]>();
+
+  channelData.forEach((channel) => {
+    if (!channelMap.has(channel.type)) channelMap.set(channel.type, [channel]);
+    else channelMap.get(channel.type)?.push(channel);
+  });
+
+  return (
+    <Accordion type="multiple" className="w-full" defaultValue={Array.from(channelMap.keys())}>
+      {Array.from(channelMap.entries()).map(([type, channels], index) => (
+        <AccordionItem value={type} key={index} className="border-none">
+          <AccordionTrigger className="items-center px-2 py-2 cursor-pointer text-muted-foreground hover:no-underline hover:text-foreground" >
+            {getChannelIcon(type)}
+            {getChannelGroupName(type)}
+          </AccordionTrigger>
+          <AccordionContent className="pb-1">
+            {channels.map((channel) => (
+              <div
+                key={channel._id}
+                onClick={() => changeChannels(channel)}
+                className="flex items-center gap-2 px-2 py-1.5 mx-2 rounded text-sm cursor-pointer transition-colors text-muted-foreground hover:bg-sidebar-accent/50 hover:text-foreground group"
+              >
+                <span className="text-muted-foreground group-hover:text-foreground">
+                  {getChannelIcon(type)}
+                </span>
+                <span className="truncate">{channel.name}</span>
+              </div>
+            ))}
+          </AccordionContent>
+        </AccordionItem>
+      ))}
+    </Accordion>
   );
 }

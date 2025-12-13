@@ -46,6 +46,7 @@ export function ServerProvider({ children }: { children: ReactNode }) {
   );
   const [messages, setMessagesData] = useState<MessageData[]>([]);
   const [leftSidebar, setLeftSidebar] = useState(true);
+  const [rightSidebar, setRightSidebar] = useState(true);
 
   useEffect(() => {
     if (!socketRef.current) {
@@ -113,12 +114,14 @@ export function ServerProvider({ children }: { children: ReactNode }) {
 
   const sendMessage = () => {
     // Send Message Logic
+    if (messageInput.trim() === "") return;
+
     if (socketRef.current) {
       socketRef.current.emit(
         "send-message",
         currentChannel?._id,
         user?._id,
-        messageInput
+        messageInput.trim()
       );
       setMessageInput("");
     }
@@ -168,13 +171,15 @@ export function ServerProvider({ children }: { children: ReactNode }) {
       });
   };
 
-  const changeServers = (server: ServerData) => { // Change Servers Logic 
+  const changeServers = (server: ServerData) => {
+    // Change Servers Logic
     if (currentServer && currentServer._id === server._id) return;
     console.log("Changing The Server", server._id);
     setCurrentServer(server);
   };
 
-  const changeChannels = (channel: ChannelData) => { // Change Channels Logic
+  const changeChannels = (channel: ChannelData) => {
+    // Change Channels Logic
     if (currentChannel && currentChannel._id === channel._id) return;
     console.log("Changing the Channel", channel._id);
     setCurrentChannel(channel);
@@ -193,7 +198,9 @@ export function ServerProvider({ children }: { children: ReactNode }) {
     sendMessage,
     messages,
     leftSidebar,
-    setLeftSidebar
+    setLeftSidebar,
+    rightSidebar,
+    setRightSidebar,
   };
 
   return (

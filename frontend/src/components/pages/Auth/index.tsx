@@ -21,7 +21,6 @@ import { OTPDialog } from "../../shared/OTP-Dialog/OTPDialog";
 import useGoogleAuth from "@/src/hooks/useGoogleAuth";
 import { ForgetPasswordDialog } from "../../shared/Forget-Password/ForgetPassword";
 import { LocalAuthResponse, Mode } from "@/src/types/auth.types";
-import Image from "next/image";
 
 export default function AuthPage() {
   const searchParams = useSearchParams();

@@ -1,4 +1,4 @@
-import StudentJosephine from "@/src/components/pages/Student/Josephine";
+import JosephineNewChat from "@/src/components/pages/Student/Josephine/newchat";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -7,6 +7,6 @@ export const metadata: Metadata = {
 
 export default function Page(){
     return (
-        <StudentJosephine/>
+        <JosephineNewChat/>
     )
 }

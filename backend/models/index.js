@@ -11,5 +11,6 @@ db.material = require("./material.model");
 db.server = require("./server.model");
 db.channel = require("./channel.model");
 db.message = require("./message.model");
+db.chat = require("./chat.model");
 
 module.exports = db;

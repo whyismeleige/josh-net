@@ -188,6 +188,12 @@ const UserSchema = new mongoose.Schema(
         ref: "Server",
       },
     ],
+    chats: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Chat",
+      },
+    ],
   },
   {
     timestamps: true,
@@ -203,6 +209,7 @@ const UserSchema = new mongoose.Schema(
     toObject: {
       transform: function (doc, ret) {
         delete ret.password;
+        delete ret.security.passwordHistory;
         delete ret.refreshTokens;
         delete ret.__v;
         return ret;

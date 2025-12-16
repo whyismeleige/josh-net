@@ -64,7 +64,7 @@ const items = [
   {
     title: "Josephine",
     icon: Bot,
-    href: "/student/josephine",
+    href: "/student/josephine/new",
   },
 ];
 

@@ -22,9 +22,9 @@ import {
 import { ArrowUpIcon, AudioLines, Paperclip } from "lucide-react";
 
 export default function JosephineInput() {
-  const { prompt, setPrompt } = useJosephineContext();
+  const { prompt, setPrompt, sendPrompt } = useJosephineContext();
   return (
-    <InputGroup className="max-w-2xl">
+    <InputGroup className="max-w-4xl">
       <InputGroupTextarea placeholder="Ask Josephine..." value={prompt} onChange={(e) => setPrompt(e.target.value)} />
       <InputGroupAddon align="block-end">
         <InputGroupButton
@@ -64,6 +64,8 @@ export default function JosephineInput() {
           variant="default"
           className="rounded-full"
           size="icon-sm"
+          onClick={sendPrompt}
+          disabled={prompt.trim() === ""}
         >
           <ArrowUpIcon />
           <span className="sr-only">Send</span>

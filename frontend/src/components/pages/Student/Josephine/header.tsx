@@ -1,8 +1,6 @@
 import { Button } from "@/components/ui/button";
 import {
-  ArrowDown,
   ChevronDown,
-  Delete,
   PanelLeft,
   Pen,
   Share,
@@ -20,7 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export default function JosephineHeader() {
-  const { sidebar, setSidebar } = useJosephineContext();
+  const { sidebar, setSidebar, currentChat } = useJosephineContext();
   return (
     <header className="flex shrink-0 items-center justify-between border-b gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
       <div className="flex items-center justify-between m-2">
@@ -32,14 +30,14 @@ export default function JosephineHeader() {
         >
           <PanelLeft />
         </Button>
-        <Separator
+        {currentChat && (<><Separator
           orientation="vertical"
           className="mx-2 data-[orientation=vertical]:h-4"
         />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <span className="flex items-center cursor-pointer gap-1">
-              Chat Title <ChevronDown size={20} />
+              {currentChat?.title || "New Chat"} <ChevronDown size={20} />
             </span>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
@@ -55,12 +53,12 @@ export default function JosephineHeader() {
               <Trash /> Delete
             </DropdownMenuItem>
           </DropdownMenuContent>
-        </DropdownMenu>
+        </DropdownMenu></>)}
       </div>
-      <Button variant="outline">
+      {currentChat && <Button variant="outline">
         <Share />
-        Share
-      </Button>
+        <span className="hidden md:block">Share</span>
+      </Button>}
     </header>
   );
 }

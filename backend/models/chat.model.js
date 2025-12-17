@@ -17,7 +17,7 @@ const ChatSchema = new mongoose.Schema(
       {
         author: {
           type: String,
-          enum: ["user", "ai"],
+          enum: ["user", "ai", "assistant"],
           required: true,
         },
         message: {
@@ -57,5 +57,15 @@ const ChatSchema = new mongoose.Schema(
     },
   }
 );
+
+ChatSchema.methods.checkAccess = function (userId) {
+  if(this.access === "public" || this.userId.toString() === userId) return true;
+  return false;
+}
+
+ChatSchema.methods.saveConversation = async function (author, message) {
+  this.conversationHistory = [...this.conversationHistory, { author, message }];
+  return await this.save();
+}
 
 module.exports = mongoose.model("Chat", ChatSchema);

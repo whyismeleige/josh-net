@@ -18,10 +18,10 @@ import {
   Trash,
 } from "lucide-react";
 import Link from "next/link";
-import { Fragment } from "react/jsx-runtime";
 
 export default function JosephineSidebar() {
   const { sidebar, chats, setSidebar } = useJosephineContext();
+
 
   return (
     <>
@@ -41,10 +41,10 @@ export default function JosephineSidebar() {
           border-r
           ${
             sidebar
-              ? "translate-x-0 opacity-100"
-              : "-translate-x-full md:translate-x-0 opacity-0 md:opacity-100"
+              ? "w-64 md:w-64 translate-x-0 opacity-100"
+              : "-translate-x-full w-0 overflow-hidden md:translate-x-0 opacity-0 md:opacity-100"
           }
-          ${sidebar ? "w-64 md:w-64" : "w-0 overflow-hidden"}
+          
         `}
       >
         <div className="w-64 h-full flex flex-col">
@@ -82,7 +82,7 @@ export default function JosephineSidebar() {
           {/* Navigation Items */}
           <div className="flex-1 overflow-y-auto p-1 space-y-1 custom-scrollbar">
             <span className="px-3 py-1.5 text-xs ">Recents</span>
-            {chats.map((chat, index) => (
+            {[...chats].reverse().map((chat, index) => (
               <div
                 key={index}
                 className="flex items-center w-full px-3 py-1.5 
@@ -99,13 +99,13 @@ export default function JosephineSidebar() {
                     <span className="truncate">{chat.title}</span>
                   </div>
                 </Link>
-                <DropdownMenu >
+                <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild>
                     <Button size="icon-lg" className="size-5 hidden group-hover:block" variant="ghost">
                       <Ellipsis />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent side="right">
+                  <DropdownMenuContent>
                     <DropdownMenuItem>
                       <StarIcon />
                       Star

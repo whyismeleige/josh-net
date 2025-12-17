@@ -1,5 +1,7 @@
+import { ParamValue } from "next/dist/server/request/params";
+
 export type ChatAccess = "public" | "private";
-export type Authors = "user" | "ai";
+export type Authors = "user" | "ai" | "assistant";
 
 export interface Conversation {
   author: Authors;
@@ -11,7 +13,7 @@ export interface ChatsData {
   _id: string;
   title: string;
   userId: string;
-  convesationHistory: Conversation;
+  conversationHistory: Conversation[];
   access: ChatAccess;
   aiModel: string;
   createdAt: string;
@@ -24,4 +26,9 @@ export interface JosephineContextType {
   prompt: string;
   setPrompt: (value: string) => void;
   chats: ChatsData[];
+  getChat: (chatId: ParamValue) => void;
+  currentChat: ChatsData | null;
+  sendPrompt: () => void;
+  animateLastMessage: boolean;
+  resetState: () => void;
 }

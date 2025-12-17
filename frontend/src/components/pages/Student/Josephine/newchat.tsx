@@ -1,11 +1,19 @@
 "use client";
 import { useAppSelector } from "@/src/hooks/redux";
 import JosephineInput from "./input";
+import { useJosephineContext } from "@/src/context/josephine.provider";
+import { useEffect } from "react";
 
 export default function JosephineNewChat() {
     const {user} = useAppSelector((state) => state.auth);
+
+    const { resetState } = useJosephineContext();
+
+    useEffect(() => {
+      resetState();
+    }, [resetState])
   return (
-    <section className="flex h-full flex-col items-center justify-center gap-10 p-4 pb-30">
+    <section className="flex h-full flex-col bg-card items-center justify-center gap-10 p-4 pb-30">
       {/* Orb Image */}
       <div className="hidden sm:block w-48 h-48 relative">
         <img

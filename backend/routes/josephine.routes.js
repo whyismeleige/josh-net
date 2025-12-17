@@ -8,5 +8,8 @@ const {
 router.use(authenticateToken, authorizeRoles("student"));
 
 router.get("/chats",controller.listChats);
+router.post("/prompt", controller.sendPrompt);
+
+router.get("/chat/:id", controller.getChat);
 
 module.exports = router;

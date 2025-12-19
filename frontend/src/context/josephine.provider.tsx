@@ -5,6 +5,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import {
@@ -30,6 +31,69 @@ export function JosephineProvider({ children }: { children: ReactNode }) {
   const [chats, setChats] = useState<ChatsData[]>([]);
   const [currentChat, setCurrentChat] = useState<ChatsData | null>(null);
   const [animateLastMessage, setAnimateLastMessage] = useState(false);
+
+  const [isRecording, setIsRecording] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder>(null);
+  const audioChunksRef = useRef<BlobPart[]>([]);
+
+  const startRecording = async () => {
+    try {
+      console.log("Started Recording...");
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorderRef.current = new MediaRecorder(stream);
+      audioChunksRef.current = [];
+
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        audioChunksRef.current.push(event.data);
+      };
+
+      mediaRecorderRef.current.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, {
+          type: "audio/webm",
+        });
+        await sendAudio(audioBlob);
+      };
+
+      mediaRecorderRef.current.start();
+      setIsRecording(true);
+    } catch (error) {
+      console.error("Error accessing microphone", error);
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      console.log("Stopping Recording...");
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current.stream
+        .getTracks()
+        .forEach((track) => track.stop());
+      setIsRecording(false);
+    }
+  };
+
+  const sendAudio = async (audioBlob: Blob) => {
+    const formData = new FormData();
+    formData.append("audio", audioBlob, "recording.webm");
+
+    try {
+      const response = await fetch(
+        `${BACKEND_URL}/api/v1/josephine/voice-chat`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: formData,
+        }
+      );
+
+      const data = await response.json();
+      console.log("Server Response", data);
+    } catch (error) {
+      console.error("Error uploading audio", error);
+    }
+  };
 
   const sendPrompt = () => {
     const userConversation: Conversation = {
@@ -123,8 +187,19 @@ export function JosephineProvider({ children }: { children: ReactNode }) {
       sendPrompt,
       animateLastMessage,
       resetState,
+      isRecording,
+      startRecording,
+      stopRecording,
     }),
-    [sidebar, prompt, chats, getChat, currentChat, animateLastMessage]
+    [
+      sidebar,
+      prompt,
+      chats,
+      getChat,
+      currentChat,
+      animateLastMessage,
+      isRecording,
+    ]
   );
 
   return (

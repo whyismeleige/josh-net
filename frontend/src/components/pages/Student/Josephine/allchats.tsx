@@ -1,6 +1,5 @@
-import React, { useState } from "react";
-import { Search, Plus, MoreHorizontal, SearchIcon } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { useState } from "react";
+import {  Plus, MoreHorizontal, SearchIcon } from "lucide-react";
 import {
   InputGroup,
   InputGroupAddon,

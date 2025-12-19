@@ -31,4 +31,7 @@ export interface JosephineContextType {
   sendPrompt: () => void;
   animateLastMessage: boolean;
   resetState: () => void;
+  startRecording: () => Promise<void>;
+  stopRecording: () => void;
+  isRecording: boolean;
 }

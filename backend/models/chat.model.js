@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { uploadS3File } = require("../utils/s3.utils");
 
 const ChatSchema = new mongoose.Schema(
   {
@@ -22,9 +23,27 @@ const ChatSchema = new mongoose.Schema(
         },
         message: {
           type: String,
-          required: true,
           trim: true,
         },
+        attachments: [
+          {
+            title: {
+              type: String,
+              required: true,
+              trim: true,
+            },
+            s3Key: {
+              type: String,
+              required: true,
+              trim: true,
+            },
+            s3URL: {
+              type: String,
+              required: true,
+              trim: true,
+            },
+          },
+        ],
         timestamp: {
           type: Date,
           default: Date.now,
@@ -59,13 +78,32 @@ const ChatSchema = new mongoose.Schema(
 );
 
 ChatSchema.methods.checkAccess = function (userId) {
-  if(this.access === "public" || this.userId.toString() === userId) return true;
+  if (this.access === "public" || this.userId.toString() === userId)
+    return true;
   return false;
-}
+};
 
-ChatSchema.methods.saveConversation = async function (author, message) {
-  this.conversationHistory = [...this.conversationHistory, { author, message }];
+ChatSchema.methods.saveConversation = async function (
+  author,
+  message,
+  files = []
+) {
+  const attachmentPromises = files.map(async (file) => {
+    const title = file.originalname;
+    const s3Key = `${this.userId}/${this._id}/${title}`;
+    const s3URL = await uploadS3File(s3Key, file.buffer);
+    return {
+      title,
+      s3Key,
+      s3URL,
+    };
+  });
+  const attachments = await Promise.all(attachmentPromises);
+  this.conversationHistory = [
+    ...this.conversationHistory,
+    { author, message, attachments },
+  ];
   return await this.save();
-}
+};
 
 module.exports = mongoose.model("Chat", ChatSchema);

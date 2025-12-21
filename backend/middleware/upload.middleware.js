@@ -5,6 +5,8 @@ const s3Client = require("../config/s3.config");
 
 const BUCKET_NAME = process.env.S3_BUCKET_NAME;
 
+const memoryStorage = multer.memoryStorage();
+
 const upload = multer({
   storage: multerS3({
     s3: s3Client,
@@ -24,7 +26,7 @@ const upload = multer({
     },
   }),
   limits: {
-    fileSize: 100 * 1024 * 1024,
+    fileSize: 100 * 1024 * 1024, // 100 MB Limit
   },
 });
 
@@ -65,9 +67,26 @@ const uploadEncrypted = multer({
   }),
 });
 
+const uploadChatAttachment = multer({
+  storage: memoryStorage,
+  limits: {
+    fileSize: 100 * 1024 * 1024, // 10 MB Limit
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ["application/pdf"];
+
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Invalid file type. Only PDFs allowed"), false);
+    }
+  },
+});
+
 module.exports = {
   upload,
   uploadForDownload,
   uploadToDynamicBucket,
   uploadEncrypted,
+  uploadChatAttachment,
 };

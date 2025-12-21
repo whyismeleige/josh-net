@@ -5,13 +5,12 @@ const {
   authorizeRoles,
 } = require("../middleware/auth.middleware");
 const { voiceUpload } = require("../middleware/voice.middleware");
-const multer = require("multer");
-const upload = multer({ dest: "uploads/" });
+const { uploadChatAttachment } = require("../middleware/upload.middleware");
 
 router.use(authenticateToken, authorizeRoles("student"));
 
-router.get("/chats",controller.listChats);
-router.post("/prompt", upload.single("file"), controller.sendPrompt);
+router.get("/chats", controller.listChats);
+router.post("/prompt", uploadChatAttachment.array("files"), controller.sendPrompt);
 
 router.get("/chat/:id", controller.getChat);
 

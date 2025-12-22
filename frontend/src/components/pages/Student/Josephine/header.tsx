@@ -1,12 +1,5 @@
 import { Button } from "@/components/ui/button";
-import {
-  ChevronDown,
-  PanelLeft,
-  Pen,
-  Share,
-  StarIcon,
-  Trash,
-} from "lucide-react";
+import { ChevronDown, PanelLeft, Trash } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useJosephineContext } from "@/src/context/josephine.provider";
 import {
@@ -16,9 +9,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  ChangeTitleDialog,
+  DeleteDialog,
+  ShareDialog,
+  StarToggle,
+} from "./dialogs";
 
 export default function JosephineHeader() {
-  const { sidebar, setSidebar, currentChat } = useJosephineContext();
+  const { sidebar, setSidebar, currentChat, access } = useJosephineContext();
   return (
     <header className="flex shrink-0 items-center justify-between border-b gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
       <div className="flex items-center justify-between m-2">
@@ -30,35 +29,38 @@ export default function JosephineHeader() {
         >
           <PanelLeft />
         </Button>
-        {currentChat && (<><Separator
-          orientation="vertical"
-          className="mx-2 data-[orientation=vertical]:h-4"
-        />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <span className="flex items-center cursor-pointer gap-1">
-              {currentChat?.title || "New Chat"} <ChevronDown size={20} />
-            </span>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem>
-              <StarIcon />
-              Star
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Pen /> Rename
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <Trash /> Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu></>)}
+        {currentChat && (
+          <>
+            <Separator
+              orientation="vertical"
+              className="mx-2 data-[orientation=vertical]:h-4"
+            />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <span className="flex items-center cursor-pointer gap-1">
+                  {currentChat?.title || "New Chat"}{" "}
+                  {access === "private" && <ChevronDown size={20} />}
+                </span>
+              </DropdownMenuTrigger>
+              {access === "private" && (
+                <DropdownMenuContent className="flex flex-col">
+                  <DropdownMenuItem asChild>
+                    <StarToggle chat={currentChat} />
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <ChangeTitleDialog chat={currentChat} />
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <DeleteDialog chatId={currentChat._id} />
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              )}
+            </DropdownMenu>
+          </>
+        )}
       </div>
-      {currentChat && <Button variant="outline">
-        <Share />
-        <span className="hidden md:block">Share</span>
-      </Button>}
+      {access === "private" && currentChat && <ShareDialog chat={currentChat} />}
     </header>
   );
 }

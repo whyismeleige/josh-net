@@ -1,28 +1,18 @@
 "use client";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { useJosephineContext } from "@/src/context/josephine.provider";
 import {
   CirclePlus,
-  Ellipsis,
   MessagesSquare,
   PanelLeft,
-  Pen,
-  StarIcon,
-  Trash,
 } from "lucide-react";
 import Link from "next/link";
 
 export default function JosephineSidebar() {
   const { sidebar, chats, setSidebar } = useJosephineContext();
 
-
+  const starredChats = chats.filter((chat) => chat.isStarred);
+  const unStarredChats = chats.filter((chat) => !chat.isStarred);
   return (
     <>
       {/* Backdrop overlay for mobile */}
@@ -80,9 +70,57 @@ export default function JosephineSidebar() {
             </Link>
           </div>
           {/* Navigation Items */}
-          <div className="flex-1 overflow-y-auto p-1 space-y-1 custom-scrollbar">
+          <div className="flex-1 overflow-y-auto p-1 space-y-1 custom-scrollbar ">
+            {starredChats.length > 0 && (
+              <>
+                <span className="px-3 py-1.5 text-xs ">Starred</span>
+                {[...starredChats].reverse().map((chat, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center w-full px-3 py-1.5 
+                text-sm text-sidebar-foreground/80
+                hover:bg-sidebar-accent hover:text-sidebar-accent-foreground
+                rounded-md transition-colors group truncate border-b"
+                  >
+                    <Link
+                      href={`/student/josephine/chat/${chat._id}`}
+                      className="flex-1 truncate"
+                      title={chat.title}
+                    >
+                      <div className="flex justify-between items-center gap-2">
+                        <span className="truncate">{chat.title}</span>
+                      </div>
+                    </Link>
+                    {/* <DropdownMenu modal={false}>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          size="icon-lg"
+                          className="size-5 hidden group-hover:block"
+                          variant="ghost"
+                        >
+                          <Ellipsis />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem>
+                          <StarIcon />
+                          Unstar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <ChangeTitleDialog chat={chat} />
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem>
+                          <Trash /> Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu> */}
+                  </div>
+                ))}
+              </>
+            )}
             <span className="px-3 py-1.5 text-xs ">Recents</span>
-            {[...chats].reverse().map((chat, index) => (
+            {[...unStarredChats].reverse().map((chat, index) => (
               <div
                 key={index}
                 className="flex items-center w-full px-3 py-1.5 
@@ -99,26 +137,29 @@ export default function JosephineSidebar() {
                     <span className="truncate">{chat.title}</span>
                   </div>
                 </Link>
-                <DropdownMenu modal={false}>
+                {/* <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild>
-                    <Button size="icon-lg" className="size-5 hidden group-hover:block" variant="ghost">
+                    <Button
+                      size="icon-lg"
+                      className="size-5 hidden group-hover:block"
+                      variant="ghost"
+                    >
                       <Ellipsis />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
-                    <DropdownMenuItem>
-                      <StarIcon />
-                      Star
+                    <DropdownMenuItem asChild>
+                      <StarToggle chat={chat}/>
                     </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Pen /> Rename
+                    <DropdownMenuItem asChild>
+                      <ChangeTitleDialog chat={chat} />
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem>
                       <Trash /> Delete
                     </DropdownMenuItem>
                   </DropdownMenuContent>
-                </DropdownMenu>
+                </DropdownMenu> */}
               </div>
             ))}
           </div>

@@ -21,6 +21,8 @@ import { OTPDialog } from "../../shared/OTP-Dialog/OTPDialog";
 import useGoogleAuth from "@/src/hooks/useGoogleAuth";
 import { ForgetPasswordDialog } from "../../shared/Forget-Password/ForgetPassword";
 import { LocalAuthResponse, Mode } from "@/src/types/auth.types";
+import Image from "next/image";
+import Link from "next/link";
 
 export default function AuthPage() {
   const searchParams = useSearchParams();
@@ -30,7 +32,7 @@ export default function AuthPage() {
   const { signInWithGoogle } = useGoogleAuth();
   const { isLoading } = useAppSelector((state) => state.auth);
 
-  const query = searchParams.get("mode");
+  const query = searchParams.get("view");
 
   const [mode, toggleMode] = useState<Mode>((query as Mode) || "Login");
   const [email, setEmail] = useState("");
@@ -69,7 +71,7 @@ export default function AuthPage() {
       );
 
       toggleOpenDialog(true);
-    } catch (error: unknown) {
+    } catch (error) {
       const message = error instanceof Error ? error.message : "Error in Auth";
       dispatch(
         addNotification({
@@ -92,12 +94,12 @@ export default function AuthPage() {
       </div>
       <div className="flex flex-col gap-4 p-6 md:p-10">
         <div className="flex justify-between gap-2">
-          <a href="#" className="flex items-center gap-2 font-medium">
+          <Link href="/" className="flex items-center gap-2 font-medium">
             <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">
               <GalleryVerticalEnd className="size-4" />
             </div>
             Josh Net
-          </a>
+          </Link>
           <ModeToggle />
         </div>
         <div className="flex flex-1 items-center justify-center">

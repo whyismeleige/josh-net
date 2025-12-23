@@ -1,43 +1,71 @@
-import { useState, useEffect } from 'react';
-import { FileText, FileImage, FileCode, Download, ZoomIn, ZoomOut, X } from 'lucide-react';
-import { useStudentContext } from '@/src/context/student.provider';
-import Image from 'next/image';
+import { useState, useEffect, useMemo } from "react";
+import {
+  FileText,
+  FileImage,
+  FileCode,
+  Download,
+  ZoomIn,
+  ZoomOut,
+  X,
+} from "lucide-react";
+import { useStudentContext } from "@/src/context/student.provider";
+import Image from "next/image";
 
 export default function FileViewer() {
   const { fileBlob } = useStudentContext();
-  const [fileURL, setFileURL] = useState<string>("");
+  
+  // Derive fileURL directly from fileBlob using useMemo
+  const fileURL = useMemo(() => {
+    if (!fileBlob) return "";
+    return URL.createObjectURL(fileBlob);
+  }, [fileBlob]);
+
   const [fileText, setFileText] = useState<string>("");
   const [zoom, setZoom] = useState<number>(100);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
+  // Cleanup effect for URL revocation
   useEffect(() => {
-    if (fileBlob) {
-      const url = URL.createObjectURL(fileBlob);
-      setFileURL(url);
-
-      if (fileBlob.type.includes("text/plain")) {
-        const reader = new FileReader();
-        reader.onload = () => {
-          let text: string;
-
-          if (typeof reader.result === "string") {
-            text = reader.result;
-          } else if (reader.result instanceof ArrayBuffer) {
-            const decoder = new TextDecoder("utf-8");
-            text = decoder.decode(reader.result);
-          } else {
-            text = "";
-          }
-
-          setFileText(text);
-        };
-        reader.readAsText(fileBlob);
-      }
-
+    if (fileURL) {
       return () => {
-        URL.revokeObjectURL(url);
+        URL.revokeObjectURL(fileURL);
       };
     }
+  }, [fileURL]);
+
+  // Effect for reading text files
+  useEffect(() => {
+    // Reset text first if not a text file
+    if (!fileBlob || !fileBlob.type.includes("text/plain")) {
+      setFileText("");
+      return;
+    }
+
+    let isMounted = true;
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      if (!isMounted) return;
+
+      let text: string;
+
+      if (typeof reader.result === "string") {
+        text = reader.result;
+      } else if (reader.result instanceof ArrayBuffer) {
+        const decoder = new TextDecoder("utf-8");
+        text = decoder.decode(reader.result);
+      } else {
+        text = "";
+      }
+
+      setFileText(text);
+    };
+
+    reader.readAsText(fileBlob);
+
+    return () => {
+      isMounted = false;
+    };
   }, [fileBlob]);
 
   if (!fileBlob) {
@@ -55,9 +83,9 @@ export default function FileViewer() {
     );
   }
 
-  const handleZoomIn = () => setZoom(prev => Math.min(prev + 25, 200));
-  const handleZoomOut = () => setZoom(prev => Math.max(prev - 25, 50));
-  const toggleFullscreen = () => setIsFullscreen(prev => !prev);
+  const handleZoomIn = () => setZoom((prev) => Math.min(prev + 25, 200));
+  const handleZoomOut = () => setZoom((prev) => Math.max(prev - 25, 50));
+  const toggleFullscreen = () => setIsFullscreen((prev) => !prev);
 
   const renderControls = () => (
     <div className="flex items-center gap-2 p-2 bg-background/95 backdrop-blur-sm border border-border rounded-lg shadow-lg">
@@ -68,7 +96,9 @@ export default function FileViewer() {
       >
         <ZoomOut className="w-4 h-4" />
       </button>
-      <span className="text-sm font-medium min-w-[3rem] text-center">{zoom}%</span>
+      <span className="text-sm font-medium min-w-[3rem] text-center">
+        {zoom}%
+      </span>
       <button
         onClick={handleZoomIn}
         className="p-2 hover:bg-accent rounded-md transition-colors"
@@ -82,7 +112,11 @@ export default function FileViewer() {
         className="p-2 hover:bg-accent rounded-md transition-colors"
         title="Toggle Fullscreen"
       >
-        {isFullscreen ? <X className="w-4 h-4" /> : <FileImage className="w-4 h-4" />}
+        {isFullscreen ? (
+          <X className="w-4 h-4" />
+        ) : (
+          <FileImage className="w-4 h-4" />
+        )}
       </button>
       <a
         href={fileURL}
@@ -102,19 +136,22 @@ export default function FileViewer() {
           <FileText className="w-5 h-5 text-primary" />
           <h3 className="text-lg font-semibold">PDF Document</h3>
         </div>
-        
+
         <div className="absolute top-20 right-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
           {renderControls()}
         </div>
 
         <div className="p-4 bg-muted/30">
-          <div 
+          <div
             className="bg-background rounded-md overflow-hidden shadow-inner"
-            style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'top center' }}
+            style={{
+              transform: `scale(${zoom / 100})`,
+              transformOrigin: "top center",
+            }}
           >
-            <iframe 
-              src={fileURL} 
-              className="w-full h-[600px] border-0" 
+            <iframe
+              src={fileURL}
+              className="w-full h-[600px] border-0"
               title="pdf-content"
             />
           </div>
@@ -130,16 +167,24 @@ export default function FileViewer() {
           <FileImage className="w-5 h-5 text-primary" />
           <h3 className="text-lg font-semibold">Image Preview</h3>
         </div>
-        
+
         <div className="absolute top-20 right-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
           {renderControls()}
         </div>
 
-        <div className={`${isFullscreen ? 'fixed inset-0 z-50 bg-background' : 'p-4 bg-muted/30'}`}>
+        <div
+          className={`${
+            isFullscreen
+              ? "fixed inset-0 z-50 bg-background"
+              : "p-4 bg-muted/30"
+          }`}
+        >
           <div className="flex items-center justify-center min-h-[400px]">
             <Image
-              src={fileURL} 
-              alt="Content" 
+              src={fileURL}
+              alt="Content"
+              width={800}
+              height={600}
               className="max-w-full h-auto rounded-md shadow-lg transition-transform"
               style={{ transform: `scale(${zoom / 100})` }}
             />
@@ -156,7 +201,7 @@ export default function FileViewer() {
           <FileCode className="w-5 h-5 text-primary" />
           <h3 className="text-lg font-semibold">Text Document</h3>
         </div>
-        
+
         <div className="absolute top-20 right-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
           <div className="flex items-center gap-2 p-2 bg-background/95 backdrop-blur-sm border border-border rounded-lg shadow-lg">
             <a
@@ -193,8 +238,8 @@ export default function FileViewer() {
             Download the file to view its contents
           </p>
         </div>
-        <a 
-          href={fileURL} 
+        <a
+          href={fileURL}
           download="downloaded_file"
           className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors font-medium shadow-sm"
         >

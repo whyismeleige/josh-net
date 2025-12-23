@@ -30,7 +30,7 @@ interface TokenResponse {
 
 const useGoogleAuth = () => {
   const [isGoogleLoaded, setIsGoogleLoaded] = useState(false);
-  const [loading, toggleLoading] = useState(false);
+  const [loading] = useState(false);
 
   useEffect(() => {
     const loadGoogleScript = () => {

@@ -5,7 +5,6 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from "react";
 import {
@@ -32,45 +31,71 @@ export function JosephineProvider({ children }: { children: ReactNode }) {
   const { accessToken } = useAppSelector((state) => state.auth);
   const access: ChatAccess = pathname.includes("share") ? "public" : "private";
 
-  const [sidebar, setSidebar] = useState(false);
+  // Track manual overrides separately
+  const [manualSidebarState, setManualSidebarState] = useState<boolean | null>(
+    null
+  );
+
+  // Derive the actual sidebar value: manual override takes precedence, otherwise use !isMobile
+  const sidebar = manualSidebarState ?? !isMobile;
+
+  // Custom setSidebar that sets the manual override
+  const setSidebar = useCallback(
+    (value: boolean | ((prev: boolean) => boolean)) => {
+      if (typeof value === "function") {
+        setManualSidebarState((prevOverride) => {
+          const currentValue = prevOverride ?? !isMobile;
+          return value(currentValue);
+        });
+      } else {
+        setManualSidebarState(value);
+      }
+    },
+    [isMobile]
+  );
+
   const [prompt, setPrompt] = useState("");
   const [chats, setChats] = useState<ChatsData[]>([]);
   const [currentChat, setCurrentChat] = useState<ChatsData | null>(null);
   const [animateLastMessage, setAnimateLastMessage] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const deleteChat = (chatId: string) => {
-    fetch(`${BACKEND_URL}/api/v1/josephine/chat/${chatId}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    })
-      .then((response) => response.json())
-      .then(() => {
-        setChats((prev) => prev.filter((chat) => chat._id !== chatId));
-        if (currentChat?._id === chatId) {
-          setCurrentChat(null);
-          router.replace("/student/josephine/new");
-        }
-        dispatch(
-          addNotification({
-            type: "success",
-            title: "Success",
-            description: "Successfully Deleted Chat",
-          })
-        );
+  const deleteChat = useCallback(
+    (chatId: string) => {
+      fetch(`${BACKEND_URL}/api/v1/josephine/chat/${chatId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
       })
-      .catch((error) =>
-        dispatch(
-          addNotification({
-            type: "error",
-            title: "Error in Deleting Chat",
-            description: error.message,
-          })
-        )
-      );
-  };
+        .then((response) => response.json())
+        .then(() => {
+          setChats((prev) => prev.filter((chat) => chat._id !== chatId));
+          if (currentChat?._id === chatId) {
+            setCurrentChat(null);
+            router.replace("/student/josephine/new");
+          }
+          dispatch(
+            addNotification({
+              type: "success",
+              title: "Success",
+              description: "Successfully Deleted Chat",
+            })
+          );
+        })
+        .catch((error) =>
+          dispatch(
+            addNotification({
+              type: "error",
+              title: "Error in Deleting Chat",
+              description: error.message,
+            })
+          )
+        );
+    },
+    [accessToken, router, currentChat?._id, dispatch]
+  );
 
   const changeChatDetails = useCallback(
     (
@@ -123,12 +148,13 @@ export function JosephineProvider({ children }: { children: ReactNode }) {
           )
         );
     },
-    [accessToken, chats]
+    [currentChat?._id, accessToken, dispatch]
   );
 
   const sendPrompt = useCallback(async () => {
     try {
       setPrompt("");
+      setLoading(true);
       setSelectedFiles([]);
 
       const formData = new FormData();
@@ -163,7 +189,7 @@ export function JosephineProvider({ children }: { children: ReactNode }) {
 
       const data = await response.json();
 
-      setChats((prev) => [...prev, data.chat]);
+      if (data.isNewConversation) setChats((prev) => [...prev, data.chat]);
       setAnimateLastMessage(true);
 
       if (data.isNewConversation)
@@ -177,10 +203,12 @@ export function JosephineProvider({ children }: { children: ReactNode }) {
           description: error instanceof Error ? error.message : "Server Error",
         })
       );
+    } finally {
+      setLoading(false);
     }
-  }, [accessToken, currentChat, prompt, router, selectedFiles]);
+  }, [accessToken, currentChat, prompt, router, selectedFiles, dispatch]);
 
-  const listChats = () => {
+  const listChats = useCallback(() => {
     fetch(`${BACKEND_URL}/api/v1/josephine/chats`, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -197,7 +225,7 @@ export function JosephineProvider({ children }: { children: ReactNode }) {
           })
         )
       );
-  };
+  }, [accessToken, dispatch]);
 
   const getChat = useCallback(
     (chatId: ParamValue) => {
@@ -221,22 +249,16 @@ export function JosephineProvider({ children }: { children: ReactNode }) {
           );
       }
     },
-    [accessToken]
+    [accessToken, dispatch, currentChat?._id]
   );
 
-  const resetState = () => {
+  const resetState = useCallback(() => {
     setCurrentChat(null);
-  };
+  }, []);
 
   useEffect(() => {
     listChats();
-  }, [accessToken]);
-
-  useEffect(() => {
-    if (isMobile !== undefined) {
-      setSidebar(!isMobile);
-    }
-  }, [isMobile]);
+  }, [listChats]);
 
   // Upcoming Voice Feature - To Do
 
@@ -314,20 +336,27 @@ export function JosephineProvider({ children }: { children: ReactNode }) {
       currentChat,
       sendPrompt,
       animateLastMessage,
+      setAnimateLastMessage,
       resetState,
       setSelectedFiles,
       changeChatDetails,
       access,
       deleteChat,
+      loading
     }),
     [
       sidebar,
+      setSidebar,
       prompt,
       chats,
       getChat,
       currentChat,
+      sendPrompt,
       animateLastMessage,
+      resetState,
       changeChatDetails,
+      access,
+      deleteChat,
     ]
   );
 

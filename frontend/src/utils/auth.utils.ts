@@ -14,39 +14,42 @@ export const validatePasswords = (
   return password === confirmPassword;
 };
 
-export const SendOTPtoEmail = async (email: string | undefined, purpose: VerificationPurpose) => {
-  const dispatch = useAppDispatch();
+export const SendOTPtoEmail = async (
+  email: string | undefined,
+  purpose: VerificationPurpose,
+  dispatch: ReturnType<typeof useAppDispatch>
+) => {
+  if (!email) {
+    dispatch(
+      addNotification({
+        title: "Error in Sending OTP",
+        description: "Email ID required for Verification",
+        type: "error",
+      })
+    );
+    return;
+  }
+  try {
+    const response = await dispatch(sendOTP({ email, purpose })).unwrap();
 
-    if (!email) {
+    if (response.type === "success") {
       dispatch(
         addNotification({
-          title: "Error in Sending OTP",
-          description: "Email ID required for Verification",
-          type: "error",
+          title: `OTP Sent to Email`,
+          description: response.message,
+          type: response.type,
         })
       );
-      return;
     }
-    try {
-      const response = await dispatch(sendOTP({ email, purpose })).unwrap();
-
-      if (response.type === "success") {
-        dispatch(
-          addNotification({
-            title: `OTP Sent to Email`,
-            description: response.message,
-            type: response.type,
-          })
-        );
-      } 
-
-    } catch (error) {
-      dispatch(
-        addNotification({
-          title: "Error",
-          description: "Error in Sending OTP",
-          type: "error",
-        })
-      );
-    } 
-  };
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Error in Sending OTP";
+    dispatch(
+      addNotification({
+        title: "Error",
+        description: message,
+        type: "error",
+      })
+    );
+  }
+};

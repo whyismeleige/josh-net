@@ -1,5 +1,7 @@
 import { ArrowRight } from "lucide-react";
 
+import { cn } from "@/lib/utils";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,18 +22,21 @@ interface Post {
   image: string;
 }
 
-interface LandingBlogProps {
+interface Blog7Props {
   tagline?: string;
   heading?: string;
+  setRef?: (key: string, node: HTMLDivElement | null) => void;
   description?: string;
   buttonText?: string;
   buttonUrl?: string;
   posts?: Post[];
+  className?: string;
 }
 
-const LandingBlog = ({
+export default function Blog({
   tagline = "Latest Updates",
   heading = "Blog Posts",
+  setRef,
   description = "Discover the latest trends, tips, and best practices in modern web development. From UI components to design systems, stay updated with our expert insights.",
   buttonText = "View all articles",
   buttonUrl = "https://shadcnblocks.com",
@@ -45,7 +50,8 @@ const LandingBlog = ({
       author: "Sarah Chen",
       published: "1 Jan 2024",
       url: "https://shadcnblocks.com",
-      image: "https://deifkwefumgah.cloudfront.net/shadcnblocks/block/placeholder-dark-1.svg",
+      image:
+        "https://deifkwefumgah.cloudfront.net/shadcnblocks/block/placeholder-dark-1.svg",
     },
     {
       id: "post-2",
@@ -56,7 +62,8 @@ const LandingBlog = ({
       author: "Marcus Rodriguez",
       published: "1 Jan 2024",
       url: "https://shadcnblocks.com",
-      image: "https://deifkwefumgah.cloudfront.net/shadcnblocks/block/placeholder-dark-1.svg",
+      image:
+        "https://deifkwefumgah.cloudfront.net/shadcnblocks/block/placeholder-dark-1.svg",
     },
     {
       id: "post-3",
@@ -67,21 +74,23 @@ const LandingBlog = ({
       author: "Emma Thompson",
       published: "1 Jan 2024",
       url: "https://shadcnblocks.com",
-      image: "https://deifkwefumgah.cloudfront.net/shadcnblocks/block/placeholder-dark-1.svg",
+      image:
+        "https://deifkwefumgah.cloudfront.net/shadcnblocks/block/placeholder-dark-1.svg",
     },
   ],
-}: LandingBlogProps) => {
+  className,
+}: Blog7Props) {
   return (
-    <section className="py-32">
+    <section className={cn("py-16", className)} ref={(node: HTMLDivElement | null) => setRef?.("Blog", node)}>
       <div className="container mx-auto flex flex-col items-center gap-16 lg:px-16">
         <div className="text-center">
           <Badge variant="secondary" className="mb-6">
             {tagline}
           </Badge>
-          <h2 className="mb-3 text-pretty text-3xl font-semibold md:mb-4 md:text-4xl lg:mb-6 lg:max-w-3xl lg:text-5xl">
+          <h2 className="mb-3 text-3xl font-semibold text-pretty md:mb-4 md:text-4xl lg:mb-6 lg:max-w-3xl lg:text-5xl">
             {heading}
           </h2>
-          <p className="text-muted-foreground mb-8 md:text-base lg:max-w-2xl lg:text-lg">
+          <p className="mb-8 text-muted-foreground md:text-base lg:max-w-2xl lg:text-lg">
             {description}
           </p>
           <Button variant="link" className="w-full sm:w-auto" asChild>
@@ -101,7 +110,7 @@ const LandingBlog = ({
                 <a
                   href={post.url}
                   target="_blank"
-                  className="fade-in transition-opacity duration-200 hover:opacity-70"
+                  className="transition-opacity duration-200 fade-in hover:opacity-70"
                 >
                   <img
                     src={post.image}
@@ -124,7 +133,7 @@ const LandingBlog = ({
                 <a
                   href={post.url}
                   target="_blank"
-                  className="text-foreground flex items-center hover:underline"
+                  className="flex items-center text-foreground hover:underline"
                 >
                   Read more
                   <ArrowRight className="ml-2 size-4" />
@@ -136,6 +145,4 @@ const LandingBlog = ({
       </div>
     </section>
   );
-};
-
-export { LandingBlog };
+}

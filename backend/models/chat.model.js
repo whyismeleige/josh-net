@@ -1,6 +1,6 @@
 /**
  * Chat Model
- * 
+ *
  * Mongoose schema and model for managing chat conversations with the AI.
  * Supports conversation history, file attachments, access control,
  * and soft deletion functionality.
@@ -11,7 +11,7 @@ const { uploadS3File } = require("../utils/s3.utils");
 
 /**
  * Chat Schema Definition
- * 
+ *
  * Represents a conversation between a user and the Josephine AI assistant
  */
 const ChatSchema = new mongoose.Schema(
@@ -188,11 +188,11 @@ const ChatSchema = new mongoose.Schema(
 
 /**
  * Check if a user has access to this chat
- * 
+ *
  * Users have access if:
  * - The chat is public, OR
  * - They are the owner of the chat
- * 
+ *
  * @param {String|ObjectId} userId - ID of the user to check access for
  * @returns {Boolean} True if user has access, false otherwise
  */
@@ -202,23 +202,23 @@ ChatSchema.methods.checkAccess = function (userId) {
 
 /**
  * Soft delete the chat
- * 
+ *
  * Marks the chat as deleted without removing it from the database.
  * This allows for potential recovery and maintains referential integrity.
- * 
+ *
  * @returns {Promise<Chat>} The updated chat document
  */
 ChatSchema.methods.softDelete = async function () {
   this.isDeleted = true;
-  this.deletedAt = Date.now;
+  this.deletedAt = Date.now().toString();
   return await this.save();
 };
 
 /**
  * Change chat details/settings
- * 
+ *
  * Supports toggling star status, renaming, and changing access level
- * 
+ *
  * @param {Object} details - Object containing modification flags
  * @param {Boolean} [details.changeStar] - If true, toggles star status
  * @param {String} [details.newName] - If provided, updates chat title
@@ -241,10 +241,10 @@ ChatSchema.methods.changeDetails = async function (details) {
 
 /**
  * Save a new message to the conversation history
- * 
+ *
  * Handles both user and AI messages, including file attachments.
  * File attachments are uploaded to S3 before being saved to the database.
- * 
+ *
  * @param {String} author - Author of the message ("user", "ai", or "assistant")
  * @param {String} message - Text content of the message
  * @param {Array} [files=[]] - Array of file objects to attach
@@ -290,7 +290,7 @@ ChatSchema.methods.saveConversation = async function (
 
 /**
  * Export the Chat model
- * 
+ *
  * Creates and exports a Mongoose model based on the ChatSchema
  * This model provides an interface for CRUD operations on the chats collection
  */

@@ -41,7 +41,8 @@ import {
   Paperclip,
   X,
 } from "lucide-react";
-import { ChangeEvent, useRef, useState } from "react";
+import Image from "next/image";
+import { ChangeEvent, KeyboardEvent, useRef, useState } from "react";
 
 export default function JosephineInput() {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -99,6 +100,13 @@ export default function JosephineInput() {
     }
   };
 
+  const handleText = async (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      if (prompt.trim() !== "") await handleSubmit();
+    }
+  };
+
   return (
     <div className="w-full max-w-4xl">
       <FileAttachmentViewer files={attachedFiles} onRemove={handleRemoveFile} />
@@ -110,6 +118,7 @@ export default function JosephineInput() {
           value={prompt}
           className="max-h-[200px] overflow-y-auto custom-scrollbar"
           onChange={(e) => setPrompt(e.target.value)}
+          onKeyDown={handleText}
         />
         <InputGroupAddon align="block-end">
           <Tooltip>
@@ -126,8 +135,9 @@ export default function JosephineInput() {
                   className="hidden rounded-full"
                   multiple
                   onChange={handleFileChange}
+                  disabled={loading}
                 />
-                <Paperclip />
+                {loading ? <Spinner /> : <Paperclip />}
               </InputGroupButton>
             </TooltipTrigger>
             <TooltipContent>Attachments</TooltipContent>
@@ -196,7 +206,7 @@ export default function JosephineInput() {
         </InputGroupAddon>
       </InputGroup>
       <div className="text-xs text-center m-2 text-secondary">
-        Josephine can make mistakes. Please double check responses.
+        <p>Josephine can make mistakes. Please double check responses.</p>
       </div>
     </div>
   );
@@ -260,7 +270,7 @@ export function FileAttachmentViewer({
           <div className="w-full h-full flex items-center justify-center p-2">
             {attachedFile.file.type.startsWith("image/") &&
             attachedFile.preview ? (
-              <img
+              <Image
                 src={attachedFile.preview}
                 alt={attachedFile.file.name}
                 className="max-w-full max-h-full object-contain"

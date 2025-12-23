@@ -1,6 +1,5 @@
-import LandingPage from "@/src/components/pages/Landing";
+import LandingPage from "@/src/components/pages/landing";
 import PublicRoute from "@/src/store/providers/PublicRoute";
-import Image from "next/image";
 
 export default function Home() {
   return (

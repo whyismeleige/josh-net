@@ -85,8 +85,8 @@ export const registerUser = createAsyncThunk(
       if (data.type !== "success") return rejectWithValue(data.message);
 
       return data;
-    } catch (error: any | unknown) {
-      return rejectWithValue(error.message);
+    } catch (error) {
+      return rejectWithValue(error instanceof Error ? error.message : "Registering Error");
     }
   }
 );
@@ -121,6 +121,7 @@ export const loginUser = createAsyncThunk(
         },
       };
     } catch (error: unknown) {
+      console.log("The error is", error);
       const message =
         error instanceof Error ? error.message : "An error occurred";
       return rejectWithValue(message);

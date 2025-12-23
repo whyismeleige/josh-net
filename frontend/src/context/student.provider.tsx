@@ -131,9 +131,11 @@ export function StudentProvider({ children }: { children: ReactNode }) {
 
         for (let i = start; i <= end; i++) newSelected.add(i);
       } else if (event.ctrlKey || event.metaKey) {
-        newSelected.has(index)
-          ? newSelected.delete(index)
-          : newSelected.add(index);
+        if (newSelected.has(index)) {
+          newSelected.delete(index);
+        } else {
+          newSelected.add(index);
+        }
       } else {
         newSelected.clear();
         newSelected.add(index);

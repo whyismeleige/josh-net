@@ -133,7 +133,7 @@ export const OTPDialog: FC<OTPDialogProps> = ({
           </InputOTPGroup>
         </InputOTP>
         <span
-          onClick={() => SendOTPtoEmail(email, purpose)}
+          onClick={() => SendOTPtoEmail(email, purpose, dispatch)}
           className="text-center text-sm cursor-pointer hover:underline"
         >
           Resend OTP

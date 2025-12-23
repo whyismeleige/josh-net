@@ -38,6 +38,7 @@ export interface JosephineContextType {
   currentChat: ChatsData | null;
   sendPrompt: () => Promise<void>;
   animateLastMessage: boolean;
+  setAnimateLastMessage: (toggle: boolean) => void;
   resetState: () => void;
   setSelectedFiles: (files: File[]) => void;
   changeChatDetails: (
@@ -50,4 +51,5 @@ export interface JosephineContextType {
   ) => void;
   access: ChatAccess;
   deleteChat: (chatId: string) => void;
+  loading: boolean;
 }

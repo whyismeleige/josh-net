@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { ChevronDown, PanelLeft, Trash } from "lucide-react";
+import { ChevronDown, PanelLeft } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useJosephineContext } from "@/src/context/josephine.provider";
 import {

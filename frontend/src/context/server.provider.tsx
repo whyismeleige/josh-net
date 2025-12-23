@@ -1,6 +1,7 @@
 import {
   createContext,
   ReactNode,
+  useCallback,
   useContext,
   useEffect,
   useRef,
@@ -48,6 +49,83 @@ export function ServerProvider({ children }: { children: ReactNode }) {
   const [leftSidebar, setLeftSidebar] = useState(true);
   const [rightSidebar, setRightSidebar] = useState(true);
 
+  const sendMessage = useCallback(() => {
+    // Send Message Logic
+    if (messageInput.trim() === "") return;
+
+    if (socketRef.current) {
+      socketRef.current.emit(
+        "send-message",
+        currentChannel?._id,
+        user?._id,
+        messageInput.trim()
+      );
+      setMessageInput("");
+    }
+  }, [messageInput, currentChannel?._id, user?._id]);
+
+  const getMessagesList = useCallback((channelId: string) => {
+    // Receive Messages List of the Current Channel
+    fetch(`${BACKEND_URL}/api/v1/server/message/list?channelId=${channelId}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    })
+      .then((response) => response.json())
+      .then((data) => setMessagesData(data.messages)); // Save the Message Data
+  }, [accessToken]);
+
+  const getChannelList = useCallback((serverId: string) => {
+    // Receive Channels List of the Current Server
+    fetch(`${BACKEND_URL}/api/v1/server/channel/list?serverId=${serverId}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        setChannelData(data.channels); // Save Channel List
+        if (data.channels[0]) {
+          setCurrentChannel(data.channels[0]); // Save Current Channel ( triggers UseEffect )
+        }
+      });
+  }, [accessToken]);
+
+  const changeServers = useCallback((server: ServerData) => {
+    // Change Servers Logic
+    setCurrentServer((prev) => {
+      if (prev && prev._id === server._id) return prev;
+      console.log("Changing The Server", server._id);
+      return server;
+    });
+  }, []);
+
+  const getServerList = useCallback(() => {
+    // Receive Server List of the User
+    fetch(`${BACKEND_URL}/api/v1/server/list`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        setServerData(data.servers); // Save Server List
+        if (data.servers[0]) changeServers(data.servers[0]); // Change Current Server ( triggers UseEffect )
+      });
+  }, [accessToken, changeServers]);
+
+  const changeChannels = useCallback((channel: ChannelData) => {
+    // Change Channels Logic
+    setCurrentChannel((prev) => {
+      if (prev && prev._id === channel._id) return prev;
+      console.log("Changing the Channel", channel._id);
+      return channel;
+    });
+  }, []);
+
   useEffect(() => {
     if (!socketRef.current) {
       // Socket intialization
@@ -87,7 +165,7 @@ export function ServerProvider({ children }: { children: ReactNode }) {
       isIntialMount.current = false;
       getServerList(); // Get The Server List of the user
     }
-  }, []);
+  }, [getServerList]);
 
   useEffect(() => {
     if (!currentChannel || !socketRef.current) return;
@@ -103,87 +181,14 @@ export function ServerProvider({ children }: { children: ReactNode }) {
         socketRef.current.emit("leave-channel", currentChannel._id, user?._id);
       }
     };
-  }, [currentChannel?._id]);
+  }, [currentChannel, currentChannel?._id, user?._id, getMessagesList]);
 
   useEffect(() => {
     // UseEffect when Current Server Changes
     if (!currentServer) return;
 
     getChannelList(currentServer._id); // Get the Channel List of the Current Server
-  }, [currentServer?._id]);
-
-  const sendMessage = () => {
-    // Send Message Logic
-    if (messageInput.trim() === "") return;
-
-    if (socketRef.current) {
-      socketRef.current.emit(
-        "send-message",
-        currentChannel?._id,
-        user?._id,
-        messageInput.trim()
-      );
-      setMessageInput("");
-    }
-  };
-
-  const getMessagesList = (channelId: string) => {
-    // Receive Messages List of the Current Channel
-    fetch(`${BACKEND_URL}/api/v1/server/message/list?channelId=${channelId}`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    })
-      .then((response) => response.json())
-      .then((data) => setMessagesData(data.messages)); // Save the Message Data
-  };
-
-  const getChannelList = (serverId: string) => {
-    // Receive Channels List of the Current Server
-    fetch(`${BACKEND_URL}/api/v1/server/channel/list?serverId=${serverId}`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        setChannelData(data.channels); // Save Channel List
-        if (data.channels[0]) {
-          setCurrentChannel(data.channels[0]); // Save Current Channel ( triggers UseEffect )
-        }
-      });
-  };
-
-  const getServerList = () => {
-    // Receive Server List of the User
-    fetch(`${BACKEND_URL}/api/v1/server/list`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        setServerData(data.servers); // Save Server List
-        if (data.servers[0]) changeServers(data.servers[0]); // Change Current Server ( triggers UseEffect )
-      });
-  };
-
-  const changeServers = (server: ServerData) => {
-    // Change Servers Logic
-    if (currentServer && currentServer._id === server._id) return;
-    console.log("Changing The Server", server._id);
-    setCurrentServer(server);
-  };
-
-  const changeChannels = (channel: ChannelData) => {
-    // Change Channels Logic
-    if (currentChannel && currentChannel._id === channel._id) return;
-    console.log("Changing the Channel", channel._id);
-    setCurrentChannel(channel);
-  };
+  }, [currentServer, currentServer?._id, getChannelList]);
 
   const value: ServerContextType = {
     serverData,

@@ -29,6 +29,7 @@
     "@radix-ui/react-toggle": "^1.1.10",
     "@radix-ui/react-tooltip": "^1.2.8",
     "@reduxjs/toolkit": "^2.11.0",
+    "@tabler/icons-react": "^3.36.0",
     "apexcharts": "^5.3.6",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

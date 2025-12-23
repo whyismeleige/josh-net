@@ -58,8 +58,7 @@ export function HeatmapComponent() {
     for (let i = 0; i < count; i++) {
       const x = `W${i + 1}`;
       // eslint-disable-next-line react-hooks/purity
-      const y =
-        Math.floor(Math.random() * (yrange.max - yrange.min + 1)) + yrange.min;
+      const y = Math.floor(Math.random() * (yrange.max - yrange.min + 1)) + yrange.min;
       series.push({ x, y });
     }
     return series;

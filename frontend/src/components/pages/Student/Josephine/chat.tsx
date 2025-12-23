@@ -2,16 +2,19 @@
 import { useJosephineContext } from "@/src/context/josephine.provider";
 import { usePageTitle } from "@/src/hooks/usePageTitle";
 import { useParams } from "next/navigation";
-import { FC, forwardRef, useEffect, useRef, useState } from "react";
+import { forwardRef, useEffect, useRef, useState } from "react";
 import JosephineInput from "./input";
 import { Button } from "@/components/ui/button";
 import { Attachment } from "@/src/types/josephine.types";
 import Link from "next/link";
+import { Spinner } from "@/components/ui/spinner";
 
 // Typing animation component
 const TypingText = ({ text, speed = 10 }: { text: string; speed?: number }) => {
   const [displayedText, setDisplayedText] = useState("");
   const [currentIndex, setCurrentIndex] = useState(0);
+
+  const { setAnimateLastMessage } = useJosephineContext();
 
   useEffect(() => {
     if (currentIndex < text.length) {
@@ -21,8 +24,11 @@ const TypingText = ({ text, speed = 10 }: { text: string; speed?: number }) => {
       }, speed);
 
       return () => clearTimeout(timeout);
+    } else if (currentIndex === text.length && text.length > 0) {
+      // Animation complete
+      setAnimateLastMessage(false);
     }
-  }, [currentIndex, text, speed]);
+  }, [currentIndex, text, speed, setAnimateLastMessage]);
 
   return <span>{displayedText}</span>;
 };
@@ -106,6 +112,8 @@ const Message = forwardRef<HTMLDivElement, MessageProps>(
   }
 );
 
+Message.displayName = "Message";
+
 export default function JosephineChat() {
   usePageTitle("Josephine");
 
@@ -113,7 +121,7 @@ export default function JosephineChat() {
   const lastMessageRef = useRef<HTMLDivElement>(null);
   const endOfChatRef = useRef<HTMLDivElement>(null);
 
-  const { getChat, currentChat, animateLastMessage, access } =
+  const { getChat, currentChat, animateLastMessage, access, loading } =
     useJosephineContext();
 
   useEffect(() => {
@@ -154,11 +162,14 @@ export default function JosephineChat() {
       else {
         lastMessageRef.current?.scrollIntoView({
           behavior: "smooth",
-          block: "end",
+          block: "start",
         });
       }
     }
-  }, [currentChat?.conversationHistory.length]);
+  }, [
+    currentChat?.conversationHistory,
+    currentChat?.conversationHistory.length,
+  ]);
 
   if (currentChat?.access === "private" && access === "public") {
     return (
@@ -201,6 +212,11 @@ export default function JosephineChat() {
               }
             />
           ))}
+          {(animateLastMessage || loading) && (
+            <div className="h-svh">
+              <Spinner />
+            </div>
+          )}
           <div ref={endOfChatRef} />
         </div>
       </div>

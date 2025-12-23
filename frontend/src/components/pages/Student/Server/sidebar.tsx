@@ -180,7 +180,7 @@ const getChannelGroupName = (type: ChannelType) => {
   }
 };
 
-export function ChannelList({ channelData, changeChannels, currentChannel }: ChannelListProps) {
+export function ChannelList({ channelData, changeChannels }: ChannelListProps) {
   const channelMap = new Map<ChannelType, ChannelData[]>();
 
   channelData.forEach((channel) => {

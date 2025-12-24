@@ -5,10 +5,10 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Spinner } from "@/components/ui/spinner";
+} from "@/src/ui/alert-dialog";
+import { Button } from "@/src/ui/button";
+import { Input } from "@/src/ui/input";
+import { Spinner } from "@/src/ui/spinner";
 import { useAppDispatch, useAppSelector } from "@/src/hooks/redux";
 import { Eye, EyeOff } from "lucide-react";
 import { FC, useState } from "react";

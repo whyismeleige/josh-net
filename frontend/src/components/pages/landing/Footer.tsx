@@ -1,4 +1,4 @@
-import { Separator } from "@/components/ui/separator";
+import { Separator } from "@/src/ui/separator";
 import { SiGithub, SiLogseq } from "@icons-pack/react-simple-icons";
 
 export default function Footer() {

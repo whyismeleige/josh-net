@@ -1,5 +1,5 @@
 const express = require("express");
-const controller = require("../controllers/student.controller");
+const controller = require("../controllers/materials.controller");
 const {
   authenticateToken,
   authorizeRoles,

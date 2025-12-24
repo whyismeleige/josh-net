@@ -97,6 +97,49 @@ export function JosephineProvider({ children }: { children: ReactNode }) {
     [accessToken, router, currentChat?._id, dispatch]
   );
 
+  const batchDelete = useCallback(
+    async (chatIds: string[]) => {
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/v1/josephine/chats`, {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ chatIds }),
+        });
+
+        const data = await response.json();
+
+        console.log(data);
+
+        setChats([]);
+        setCurrentChat(null);
+
+        dispatch(
+          addNotification({
+            type: data.type,
+            title: "Success in Deleting Chats",
+            description: data.message,
+          })
+        );
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Error Deleting Chats, Try Again Later";
+        dispatch(
+          addNotification({
+            type: "error",
+            title: "Error in Deleting Chats",
+            description: message,
+          })
+        );
+      }
+    },
+    [accessToken, dispatch]
+  );
+
   const changeChatDetails = useCallback(
     (
       details: {
@@ -342,7 +385,8 @@ export function JosephineProvider({ children }: { children: ReactNode }) {
       changeChatDetails,
       access,
       deleteChat,
-      loading
+      batchDelete,
+      loading,
     }),
     [
       sidebar,
@@ -357,6 +401,8 @@ export function JosephineProvider({ children }: { children: ReactNode }) {
       changeChatDetails,
       access,
       deleteChat,
+      batchDelete,
+      loading,
     ]
   );
 

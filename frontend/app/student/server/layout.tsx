@@ -1,6 +1,6 @@
 "use client";
 import ServerHeader from "@/src/components/pages/Student/Server/header";
-import ServerSidebar from "@/src/components/pages/Student/Server/sidebar";
+import ServerSidebar from "@/src/components/pages/Student/Server/left-sidebar";
 import { ServerProvider } from "@/src/context/server.provider";
 import { ReactNode } from "react";
 

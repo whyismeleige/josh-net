@@ -20,8 +20,9 @@ exports.authenticateToken = async (req, res, next) => {
 
     if (!user) {
       user = await User.findById(id);
-      await redisClient.setEx(id, 60 * 60 * 2, JSON.stringify(user));
+      await redisClient.setEx(id, 300, JSON.stringify(user));
     }
+
 
     if (!user) {
       await redisClient.del(id);
@@ -45,6 +46,7 @@ exports.authenticateToken = async (req, res, next) => {
 exports.authorizeRoles = (...roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.user.role)) {
+      
       return res.status(403).send({
         message: "Access Forbidden",
         type: "error",

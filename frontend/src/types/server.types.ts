@@ -73,4 +73,5 @@ export interface ServerContextType {
   setLeftSidebar: (toggle: boolean) => void;
   rightSidebar: boolean;
   setRightSidebar: (toggle: boolean) => void;
+  setAttachments: (files: File[]) => void;
 }

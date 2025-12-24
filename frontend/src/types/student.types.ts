@@ -17,7 +17,7 @@ export type StudentContextType = {
   clearSelection: () => void;
   fileStructure: Files[];
   currentPath: string[];
-  fetchCourseWork: () => void;
+  fetchCourseWork: () => Promise<void>;
   getCurrentItems: () => Files[];
   handleFolderClick: (index: number, e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void;
   handleBreadCrumbClick: (index: number) => void;

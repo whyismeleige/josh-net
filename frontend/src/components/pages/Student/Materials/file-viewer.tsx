@@ -8,7 +8,7 @@ import {
   ZoomOut,
   X,
 } from "lucide-react";
-import { useStudentContext } from "@/src/context/student.provider";
+import { useStudentContext } from "@/src/context/material.provider";
 import Image from "next/image";
 
 export default function FileViewer() {

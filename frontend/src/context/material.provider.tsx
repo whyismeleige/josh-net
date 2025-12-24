@@ -1,9 +1,16 @@
 "use client";
-import React, { createContext, ReactNode, useContext, useState } from "react";
+import React, {
+  createContext,
+  ReactNode,
+  useCallback,
+  useContext,
+  useState,
+} from "react";
 import { MaterialDisplay, StudentContextType } from "../types/student.types";
 import { CourseWorkData, Files, SortObject } from "../types/material.types";
 import { BACKEND_URL } from "../utils/config";
-import { useAppSelector } from "../hooks/redux";
+import { useAppDispatch, useAppSelector } from "../hooks/redux";
+import { addNotification } from "../store/slices/notification.slice";
 
 const StudentContext = createContext<StudentContextType | undefined>(undefined);
 
@@ -66,6 +73,8 @@ function pathsToTree(data: CourseWorkData[]) {
 }
 
 export function StudentProvider({ children }: { children: ReactNode }) {
+  const dispatch = useAppDispatch();
+
   const [headerTitle, setHeaderTitle] = useState("");
   const [materialsDisplay, setMaterialsDisplay] =
     useState<MaterialDisplay>("grid");
@@ -80,32 +89,48 @@ export function StudentProvider({ children }: { children: ReactNode }) {
     directionOption: "ascending",
     folderOption: "top",
   });
-  const [searchInput, setSearchInput] = useState<string>("");
+  const [searchInput, setSearchInput] = useState<string>(
+    ""
+  );
   const [fileBlob, setFileBlob] = useState<Blob | null>(null);
 
   const { accessToken } = useAppSelector((state) => state.auth);
 
-  const fetchCourseWork = () => {
+  const fetchCourseWork = useCallback(async () => {
     try {
       setLoading(true);
-      fetch(`${BACKEND_URL}/api/v1/student/coursework`, {
+      const response = await fetch(`${BACKEND_URL}/api/v1/student/coursework`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          const root = pathsToTree(data.coursework);
-          setFileStructure(root);
-          setCurrentPath([...currentPath, root[0].title]);
-        });
+      });
+
+      const data = await response.json();
+
+      if (data.type !== "success") {
+        throw new Error(data.message);
+      }
+
+      const root: Files[] = pathsToTree(data.coursework);
+      setFileStructure(root);
+      if (root.length > 0) setCurrentPath([...currentPath, root[0].title]);
     } catch (error) {
-      console.error(error);
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Error retrieving Material, Try Again Later";
+      dispatch(
+        addNotification({
+          type: "error",
+          title: "Error in Materials",
+          description: message,
+        })
+      );
     } finally {
       setLoading(false);
     }
-  };
+  }, [accessToken, dispatch]);
 
   const clearSelection = () => {
     setSelected(new Set<number>());

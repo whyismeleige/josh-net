@@ -1,12 +1,18 @@
 "use client";
-import { Input } from "@/components/ui/input";
 import { useServerContext } from "@/src/context/server.provider";
 import RightSidebar from "./right-sidebar";
-import { CirclePlus, ImageIcon, Laugh, Send, Sticker } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ImageIcon, Laugh, Paperclip, Send, Sticker } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/src/ui/avatar";
 import { useAppSelector } from "@/src/hooks/redux";
 import { usePageTitle } from "@/src/hooks/usePageTitle";
-import { useEffect, useRef } from "react";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
+import {
+  InputGroup,
+  InputGroupButton,
+  InputGroupInput,
+  InputGroupTextarea,
+} from "@/src/ui/input-group";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/src/ui/tooltip";
 
 const getInitials = (name: string) => {
   return name
@@ -25,6 +31,9 @@ const formatTime = (timestamp: string) => {
   });
 };
 export default function StudentServer() {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const endOfChatRef = useRef<HTMLDivElement>(null);
+
   const { user } = useAppSelector((state) => state.auth);
   const {
     messageInput,
@@ -32,9 +41,40 @@ export default function StudentServer() {
     sendMessage,
     messages,
     currentServer,
+    setAttachments,
   } = useServerContext();
 
-  const endOfChatRef = useRef<HTMLDivElement>(null);
+  const [attachedFiles, setAttachedFiles] = useState<
+    { file: File; preview?: string; id: string }[]
+  >([]);
+
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return;
+    const files = Array.from(e.target.files || []);
+
+    files.forEach((file) => {
+      const id = `${Date.now()}-${Math.random()}`;
+
+      if (file.type.startsWith("image/")) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setAttachedFiles((prev) => [
+            ...prev,
+            { file, preview: reader.result as string, id },
+          ]);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        // For non-image files, just add without preview
+        setAttachedFiles((prev) => [...prev, { file, id }]);
+      }
+    });
+    setAttachments(Array.from(files));
+  };
+
+  const handleRemoveFile = (id: string) => {
+    setAttachedFiles((prev) => prev.filter((file) => file.id !== id));
+  };
 
   useEffect(() => {
     endOfChatRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -42,8 +82,8 @@ export default function StudentServer() {
 
   usePageTitle(currentServer?.name || "Student Server");
   return (
-    <div className="flex flex-1 h-full min-h-0">
-      <div className="flex-1 p-1 flex flex-col">
+    <div className="flex flex-1 w-full max-w-full h-full min-h-0">
+      <div className="flex-1 p-1 w-full max-w-full flex flex-col min-w-0">
         <div className="flex-1 overflow-y-auto space-y-4 p-1 custom-scrollbar">
           {messages.map((message) => (
             <div
@@ -91,27 +131,87 @@ export default function StudentServer() {
           ))}
           <div ref={endOfChatRef} />
         </div>
-        <div className="relative m-2">
-          <CirclePlus
-            size={20}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 cursor-pointer"
-          />
-          <Input
-            id="text"
-            className="pl-10 h-14 rounded-xl"
-            placeholder="Enter your Message"
-            value={messageInput}
-            onChange={(e) => setMessageInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") sendMessage();
-            }}
-          />
-          <div className="flex gap-3 absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer">
-            <Send size={20} onClick={sendMessage} />
-            <ImageIcon size={20} />
-            <Sticker size={20} />
-            <Laugh size={20} />
-          </div>
+        <div className="w-full p-2 max-w-full">
+          <InputGroup className="px-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <InputGroupButton
+                  variant="ghost"
+                  className="rounded-full"
+                  size="icon-sm"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <InputGroupInput
+                    ref={fileInputRef}
+                    type="file"
+                    className="hidden"
+                    onChange={handleFileChange}
+                    multiple
+                  />
+                  <Paperclip />
+                </InputGroupButton>
+              </TooltipTrigger>
+              <TooltipContent>Attachments</TooltipContent>
+            </Tooltip>
+            <InputGroupTextarea
+              placeholder="Enter your Message"
+              value={messageInput}
+              className="max-h-[100px] overflow-y-auto custom-scrollbar"
+              onChange={(e) => setMessageInput(e.target.value)}
+            />
+            <Tooltip>
+              <TooltipTrigger className="ml-auto max-sm:hidden" asChild>
+                <InputGroupButton
+                  variant="ghost"
+                  size="icon-sm"
+                  className="rounded-full"
+                >
+                  <ImageIcon />
+                </InputGroupButton>
+              </TooltipTrigger>
+              <TooltipContent>Images</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger className="ml-auto max-sm:hidden" asChild>
+                <InputGroupButton
+                  variant="ghost"
+                  size="icon-sm"
+                  className="rounded-full"
+                >
+                  <Sticker />
+                </InputGroupButton>
+              </TooltipTrigger>
+              <TooltipContent>Stickers</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger className="ml-auto max-sm:hidden" asChild>
+                <InputGroupButton
+                  variant="ghost"
+                  size="icon-sm"
+                  className="rounded-full"
+                >
+                  <Laugh />
+                </InputGroupButton>
+              </TooltipTrigger>
+              <TooltipContent>Images</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger className="max-sm:ml-auto" asChild>
+                <InputGroupButton
+                  variant="ghost"
+                  className="rounded-full"
+                  size="icon-sm"
+                  onClick={sendMessage}
+                >
+                  <>
+                    <Send />
+                    <span className="sr-only">Send</span>
+                  </>
+                </InputGroupButton>
+              </TooltipTrigger>
+              <TooltipContent>Send</TooltipContent>
+            </Tooltip>
+          </InputGroup>
         </div>
       </div>
       <RightSidebar />

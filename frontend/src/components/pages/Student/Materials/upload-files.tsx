@@ -1,5 +1,5 @@
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Button } from "@/src/ui/button";
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/src/ui/dialog";
 
 
 export default function UploadMaterialDialog () {

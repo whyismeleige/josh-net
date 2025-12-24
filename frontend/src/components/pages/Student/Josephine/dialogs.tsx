@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { Button } from "@/src/ui/button";
 import {
   Dialog,
   DialogClose,
@@ -8,16 +8,16 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Spinner } from "@/components/ui/spinner";
-import { Toggle } from "@/components/ui/toggle";
+} from "@/src/ui/dialog";
+import { Input } from "@/src/ui/input";
+import { Label } from "@/src/ui/label";
+import { Spinner } from "@/src/ui/spinner";
+import { Toggle } from "@/src/ui/toggle";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "@/src/ui/tooltip";
 import { useJosephineContext } from "@/src/context/josephine.provider";
 import { ChatAccess, ChatsData } from "@/src/types/josephine.types";
 import { FRONTEND_URL } from "@/src/utils/config";

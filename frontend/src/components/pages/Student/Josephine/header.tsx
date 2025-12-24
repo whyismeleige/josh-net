@@ -1,6 +1,6 @@
-import { Button } from "@/components/ui/button";
+import { Button } from "@/src/ui/button";
 import { ChevronDown, PanelLeft } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
+import { Separator } from "@/src/ui/separator";
 import { useJosephineContext } from "@/src/context/josephine.provider";
 import {
   DropdownMenu,
@@ -8,7 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@/src/ui/dropdown-menu";
 import {
   ChangeTitleDialog,
   DeleteDialog,

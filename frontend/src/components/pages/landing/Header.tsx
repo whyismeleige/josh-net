@@ -3,12 +3,12 @@ import {
   NavigationMenuItem,
   NavigationMenuList,
   navigationMenuTriggerStyle,
-} from "@/components/ui/navigation-menu";
+} from "@/src/ui/navigation-menu";
 import { useState } from "react";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
-import { ModeToggle } from "@/components/ui/mode-toggle";
-import { Button } from "@/components/ui/button";
+import { ModeToggle } from "@/src/ui/mode-toggle";
+import { Button } from "@/src/ui/button";
 
 const components = [
   {

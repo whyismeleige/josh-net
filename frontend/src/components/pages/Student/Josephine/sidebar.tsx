@@ -1,5 +1,5 @@
 "use client";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/src/ui/button";
 import { useJosephineContext } from "@/src/context/josephine.provider";
 import {
   CirclePlus,
@@ -13,6 +13,7 @@ export default function JosephineSidebar() {
 
   const starredChats = chats.filter((chat) => chat.isStarred);
   const unStarredChats = chats.filter((chat) => !chat.isStarred);
+  
   return (
     <>
       {/* Backdrop overlay for mobile */}
@@ -43,14 +44,7 @@ export default function JosephineSidebar() {
             <h1 className="text-lg font-semibold">Josephine</h1>
 
             {/* Close button for mobile */}
-            <Button
-              className="md:hidden p-1 hover:bg-sidebar-accent rounded-md transition-colors size-7"
-              variant="ghost"
-              onClick={() => setSidebar(!sidebar)}
-              size="icon"
-            >
-              <PanelLeft />
-            </Button>
+            <span className="font-semibold text-sm px-3 py-2 block">Users:</span>
           </div>
 
           <div className="p-1 space-y-1 border-b">

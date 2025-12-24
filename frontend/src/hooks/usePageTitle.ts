@@ -1,6 +1,6 @@
 "use client"
 import { useEffect } from "react";
-import { useStudentContext } from "../context/student.provider";
+import { useStudentContext } from "../context/material.provider";
 
 export function usePageTitle(title: string) {
   const { setHeaderTitle } = useStudentContext();

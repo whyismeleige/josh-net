@@ -1,5 +1,5 @@
 "use client";
-import { Spinner } from "@/components/ui/spinner";
+import { Spinner } from "@/src/ui/spinner";
 import { setCredentials } from "@/src/store/slices/auth.slice";
 import { addNotification } from "@/src/store/slices/notification.slice";
 import { BACKEND_URL } from "@/src/utils/config";

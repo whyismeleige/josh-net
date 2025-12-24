@@ -7,7 +7,7 @@ import {
   SelectLabel,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@/src/ui/select";
 import { usePageTitle } from "@/src/hooks/usePageTitle";
 import { ApexOptions } from "apexcharts";
 import dynamic from "next/dynamic";

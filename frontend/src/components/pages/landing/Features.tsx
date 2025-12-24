@@ -1,6 +1,6 @@
 import * as React from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/src/ui/card";
+import { Button } from "@/src/ui/button";
 import { Bot, Share, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
 

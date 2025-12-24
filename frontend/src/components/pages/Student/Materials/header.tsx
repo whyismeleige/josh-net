@@ -4,13 +4,13 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
+} from "@/src/ui/breadcrumb";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useStudentContext } from "@/src/context/student.provider";
+} from "@/src/ui/dropdown-menu";
+import { Tabs, TabsList, TabsTrigger } from "@/src/ui/tabs";
+import { useStudentContext } from "@/src/context/material.provider";
 import { Grid, Home, List } from "lucide-react";
 import { Fragment } from "react/jsx-runtime";
 

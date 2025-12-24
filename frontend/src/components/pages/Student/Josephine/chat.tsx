@@ -4,10 +4,10 @@ import { usePageTitle } from "@/src/hooks/usePageTitle";
 import { useParams } from "next/navigation";
 import { forwardRef, useEffect, useRef, useState } from "react";
 import JosephineInput from "./input";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/src/ui/button";
 import { Attachment } from "@/src/types/josephine.types";
 import Link from "next/link";
-import { Spinner } from "@/components/ui/spinner";
+import { Spinner } from "@/src/ui/spinner";
 
 // Typing animation component
 const TypingText = ({ text, speed = 10 }: { text: string; speed?: number }) => {
@@ -213,8 +213,8 @@ export default function JosephineChat() {
             />
           ))}
           {(animateLastMessage || loading) && (
-            <div className="h-svh">
-              <Spinner />
+            <div className="h-svh p-4">
+              <Spinner className="size-6 text-blue-500" />
             </div>
           )}
           <div ref={endOfChatRef} />
@@ -224,7 +224,7 @@ export default function JosephineChat() {
       {access === "private" ? (
         <JosephineInput />
       ) : (
-        <Button>Click to Use Josephine</Button>
+        <Button><Link href="/student/josephine/new">Click to Use Josephine</Link></Button>
       )}
     </div>
   );

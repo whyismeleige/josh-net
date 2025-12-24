@@ -1,15 +1,15 @@
 "use client";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/src/ui/button";
 import {
   Field,
   FieldDescription,
   FieldGroup,
   FieldLabel,
   FieldSeparator,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { ModeToggle } from "@/components/ui/mode-toggle";
-import { Spinner } from "@/components/ui/spinner";
+} from "@/src/ui/field";
+import { Input } from "@/src/ui/input";
+import { ModeToggle } from "@/src/ui/mode-toggle";
+import { Spinner } from "@/src/ui/spinner";
 import { useAppDispatch, useAppSelector } from "@/src/hooks/redux";
 import { loginUser, registerUser } from "@/src/store/slices/auth.slice";
 import { addNotification } from "@/src/store/slices/notification.slice";

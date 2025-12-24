@@ -2,7 +2,7 @@
 import { store } from "@/src/store";
 import { ReactNode } from "react";
 import { Provider } from "react-redux";
-import { ThemeProvider } from "@/components/ui/theme-provider";
+import { ThemeProvider } from "@/src/ui/theme-provider";
 
 export function Providers({ children }: Readonly<{ children: ReactNode }>) {
   return (

@@ -1,10 +1,10 @@
 "use client"
 
-import { Button } from "@/components/ui/button";
-import { ModeToggle } from "@/components/ui/mode-toggle";
-import { Separator } from "@/components/ui/separator";
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { useStudentContext } from "@/src/context/student.provider";
+import { Button } from "@/src/ui/button";
+import { ModeToggle } from "@/src/ui/mode-toggle";
+import { Separator } from "@/src/ui/separator";
+import { SidebarTrigger } from "@/src/ui/sidebar";
+import { useStudentContext } from "@/src/context/material.provider";
 
 export default function StudentHeader() {
   const { headerTitle } = useStudentContext();

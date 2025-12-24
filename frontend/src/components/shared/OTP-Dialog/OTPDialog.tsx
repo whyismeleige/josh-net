@@ -6,15 +6,15 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
+} from "@/src/ui/alert-dialog";
+import { Button } from "@/src/ui/button";
 import {
   InputOTP,
   InputOTPGroup,
   InputOTPSeparator,
   InputOTPSlot,
-} from "@/components/ui/input-otp";
-import { Spinner } from "@/components/ui/spinner";
+} from "@/src/ui/input-otp";
+import { Spinner } from "@/src/ui/spinner";
 import { useAppDispatch, useAppSelector } from "@/src/hooks/redux";
 import { verifyOTP } from "@/src/store/slices/auth.slice";
 import { addNotification } from "@/src/store/slices/notification.slice";

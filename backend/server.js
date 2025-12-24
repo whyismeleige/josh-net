@@ -54,7 +54,7 @@ const authRoutes = require("./routes/auth.routes");
  * Student-specific routes
  * Handles student profile, courses, grades, etc.
  */
-const studentRoutes = require("./routes/student.routes");
+const studentRoutes = require("./routes/materials.routes");
 
 /**
  * Server/admin routes

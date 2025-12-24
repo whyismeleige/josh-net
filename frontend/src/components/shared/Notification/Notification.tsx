@@ -3,7 +3,7 @@ import {
   AlertDescription,
   AlertTimer,
   AlertTitle,
-} from "@/components/ui/alert";
+} from "@/src/ui/alert";
 import {
   Notification as NotificationType,
 } from "@/src/types/notification.types";

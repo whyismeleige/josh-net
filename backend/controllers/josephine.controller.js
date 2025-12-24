@@ -1,6 +1,6 @@
 /**
  * Josephine Controller
- * 
+ *
  * This controller manages the AI chat functionality for the Josephine chatbot.
  * It handles conversation management, message history, file attachments,
  * and integration with the Anthropic Claude API.
@@ -24,7 +24,7 @@ const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 
 /**
  * List all chats for the authenticated user
- * 
+ *
  * @route GET /api/v1/josephine/chats
  * @access Private (Student role required)
  * @returns {Object} Response containing array of user's chats
@@ -58,14 +58,14 @@ exports.listChats = async (req, res) => {
 
 /**
  * Send a prompt to the AI and receive a response
- * 
+ *
  * This function handles:
  * - New conversation creation
  * - Existing conversation continuation
  * - File attachments (PDFs)
  * - Conversation history management
  * - Integration with Anthropic Claude API
- * 
+ *
  * @route POST /api/v1/josephine/prompt
  * @access Private (Student role required)
  * @body {String} prompt - The user's message
@@ -107,7 +107,7 @@ exports.sendPrompt = async (req, res, next) => {
     // Each message includes text and any PDF attachments
     const messages = conversationHistory.map((conversation) => {
       const content = [];
-      
+
       // Add PDF attachments as document content blocks
       if (conversation.attachments.length) {
         conversation.attachments.forEach(async (attachment) => {
@@ -122,10 +122,10 @@ exports.sendPrompt = async (req, res, next) => {
           });
         });
       }
-      
+
       // Add text message
       content.push({ type: "text", text: conversation.message });
-      
+
       return {
         role: conversation.author === "ai" ? "assistant" : "user",
         content,
@@ -220,7 +220,7 @@ exports.sendPrompt = async (req, res, next) => {
         userId: req.user._id,
         aiModel: data.model,
       });
-      
+
       // Add chat reference to user's chats array
       await User.findByIdAndUpdate(req.user._id, {
         $push: { chats: chat._id },
@@ -249,9 +249,9 @@ exports.sendPrompt = async (req, res, next) => {
 
 /**
  * Get a specific chat by ID
- * 
+ *
  * Includes authorization check to ensure user has access to the chat
- * 
+ *
  * @route GET /api/v1/josephine/chat/:id
  * @access Private (Student role required)
  * @param {String} id - Chat ID
@@ -311,9 +311,9 @@ exports.getChat = async (req, res) => {
 
 /**
  * Soft delete a chat
- * 
+ *
  * Marks the chat as deleted without removing it from the database
- * 
+ *
  * @route DELETE /api/v1/josephine/chat/:id
  * @access Private (Student role required)
  * @param {String} id - Chat ID
@@ -357,14 +357,52 @@ exports.deleteChat = async (req, res) => {
   }
 };
 
+exports.batchDelete = async (req, res) => {
+  try {
+    const { chatIds } = req.body;
+
+    if (!chatIds || !Array.isArray(chatIds) || chatIds.length === 0) {
+      return res.status(400).send({
+        message: "Please select the required chats",
+        type: "error",
+      });
+    }
+
+    const chats = await Chat.find({
+      _id: { $in: chatIds },
+      isDeleted: false, // Optional: only find chats that aren't already deleted
+    });
+
+    if (chats.length === 0) {
+      return res.status(404).send({
+        message: "No chats found",
+        type: "error",
+      });
+    }
+
+    await Promise.all(chats.map((chat) => chat.softDelete()));
+
+    res.status(200).send({
+      message: "Chats deleted successfully",
+      type: "success",
+    });
+  } catch (error) {
+    console.error("Error in Deleting Multiple Chats", error.message);
+    res.status(500).send({
+      message: error.message || "Server Error",
+      type: "error",
+    });
+  }
+};
+
 /**
  * Modify chat details
- * 
+ *
  * Allows updating:
  * - Star status (toggle)
  * - Chat title/name
  * - Access level (public/private)
- * 
+ *
  * @route PATCH /api/v1/josephine/chat/:id
  * @access Private (Student role required)
  * @param {String} id - Chat ID
@@ -430,9 +468,9 @@ exports.modifyChat = async (req, res) => {
 
 // /**
 //  * Handle voice chat uploads
-//  * 
+//  *
 //  * Accepts audio file, transcribes it using Whisper, and returns text
-//  * 
+//  *
 //  * @route POST /api/v1/josephine/voice-chat
 //  * @access Private (Student role required)
 //  * @file {File} audio - Audio file to transcribe
@@ -462,9 +500,9 @@ exports.modifyChat = async (req, res) => {
 
 // /**
 //  * Transcribe audio using OpenAI Whisper
-//  * 
+//  *
 //  * Spawns Whisper CLI process to convert audio to text
-//  * 
+//  *
 //  * @param {String} audioPath - Path to audio file
 //  * @returns {Promise<String>} Transcribed text
 //  */
@@ -482,7 +520,7 @@ exports.modifyChat = async (req, res) => {
 //     ]);
 //
 //     let output = "";
-//     
+//
 //     // Collect stdout data
 //     whisper.stdout.on("data", (data) => {
 //       output += data.toString();

@@ -16,6 +16,7 @@ import {
 import { BACKEND_URL } from "../utils/config";
 import { useAppSelector } from "../hooks/redux";
 import { io, Socket } from "socket.io-client";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const ServerContext = createContext<ServerContextType | undefined>(undefined);
 
@@ -37,6 +38,7 @@ export function ServerProvider({ children }: { children: ReactNode }) {
 
   const socketRef = useRef<Socket | null>(null); // Socket Ref
   const isIntialMount = useRef(true); // Intial Mount
+  const isMobile = useIsMobile();
 
   const [messageInput, setMessageInput] = useState<string>("");
   const [serverData, setServerData] = useState<ServerData[]>([]);
@@ -46,8 +48,47 @@ export function ServerProvider({ children }: { children: ReactNode }) {
     null
   );
   const [messages, setMessagesData] = useState<MessageData[]>([]);
-  const [leftSidebar, setLeftSidebar] = useState(true);
-  const [rightSidebar, setRightSidebar] = useState(true);
+
+  const [leftSidebarState, setLeftSidebarState] = useState<boolean | null>(
+    null
+  );
+  const [rightSidebarState, setRightSidebarState] = useState<boolean | null>(
+    null
+  );
+  const [attachments, setAttachments] = useState<File[]>([]);
+  
+  console.log(attachments);
+
+  const leftSidebar = leftSidebarState ?? !isMobile;
+  const rightSidebar = rightSidebarState ?? !isMobile;
+
+  const setLeftSidebar = useCallback(
+    (value: boolean | ((prev: boolean) => boolean)) => {
+      if (typeof value === "function") {
+        setLeftSidebarState((prevOverride) => {
+          const currentValue = prevOverride ?? !isMobile;
+          return value(currentValue);
+        });
+      } else {
+        setLeftSidebarState(value);
+      }
+    },
+    [isMobile]
+  );
+
+  const setRightSidebar = useCallback(
+    (value: boolean | ((prev: boolean) => boolean)) => {
+      if (typeof value === "function") {
+        setRightSidebarState((prevOverride) => {
+          const currentValue = prevOverride ?? !isMobile;
+          return value(currentValue);
+        });
+      } else {
+        setRightSidebarState(value);
+      }
+    },
+    [isMobile]
+  );
 
   const sendMessage = useCallback(() => {
     // Send Message Logic
@@ -64,34 +105,43 @@ export function ServerProvider({ children }: { children: ReactNode }) {
     }
   }, [messageInput, currentChannel?._id, user?._id]);
 
-  const getMessagesList = useCallback((channelId: string) => {
-    // Receive Messages List of the Current Channel
-    fetch(`${BACKEND_URL}/api/v1/server/message/list?channelId=${channelId}`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    })
-      .then((response) => response.json())
-      .then((data) => setMessagesData(data.messages)); // Save the Message Data
-  }, [accessToken]);
-
-  const getChannelList = useCallback((serverId: string) => {
-    // Receive Channels List of the Current Server
-    fetch(`${BACKEND_URL}/api/v1/server/channel/list?serverId=${serverId}`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        setChannelData(data.channels); // Save Channel List
-        if (data.channels[0]) {
-          setCurrentChannel(data.channels[0]); // Save Current Channel ( triggers UseEffect )
+  const getMessagesList = useCallback(
+    (channelId: string) => {
+      // Receive Messages List of the Current Channel
+      fetch(
+        `${BACKEND_URL}/api/v1/server/message/list?channelId=${channelId}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
         }
-      });
-  }, [accessToken]);
+      )
+        .then((response) => response.json())
+        .then((data) => setMessagesData(data.messages)); // Save the Message Data
+    },
+    [accessToken]
+  );
+
+  const getChannelList = useCallback(
+    (serverId: string) => {
+      // Receive Channels List of the Current Server
+      fetch(`${BACKEND_URL}/api/v1/server/channel/list?serverId=${serverId}`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          setChannelData(data.channels); // Save Channel List
+          if (data.channels[0]) {
+            setCurrentChannel(data.channels[0]); // Save Current Channel ( triggers UseEffect )
+          }
+        });
+    },
+    [accessToken]
+  );
 
   const changeServers = useCallback((server: ServerData) => {
     // Change Servers Logic
@@ -206,6 +256,7 @@ export function ServerProvider({ children }: { children: ReactNode }) {
     setLeftSidebar,
     rightSidebar,
     setRightSidebar,
+    setAttachments
   };
 
   return (

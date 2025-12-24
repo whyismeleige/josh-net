@@ -1,12 +1,12 @@
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@/src/ui/badge";
+import { Button } from "@/src/ui/button";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
   InputGroupInput,
   InputGroupTextarea,
-} from "@/components/ui/input-group";
+} from "@/src/ui/input-group";
 import {
   Select,
   SelectContent,
@@ -15,13 +15,13 @@ import {
   SelectLabel,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Spinner } from "@/components/ui/spinner";
+} from "@/src/ui/select";
+import { Spinner } from "@/src/ui/spinner";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "@/src/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { useJosephineContext } from "@/src/context/josephine.provider";
 import { useAppDispatch } from "@/src/hooks/redux";

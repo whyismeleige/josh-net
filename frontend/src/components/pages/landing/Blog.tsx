@@ -2,14 +2,14 @@ import { ArrowRight } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@/src/ui/badge";
+import { Button } from "@/src/ui/button";
 import {
   Card,
   CardContent,
   CardFooter,
   CardHeader,
-} from "@/components/ui/card";
+} from "@/src/ui/card";
 
 interface Post {
   id: string;

@@ -1,4 +1,4 @@
-import { SidebarProvider } from "@/components/ui/sidebar";
+import { SidebarProvider } from "@/src/ui/sidebar";
 import { ReactNode } from "react";
 
 export default function AdminLayout({children}: {children: ReactNode}) {

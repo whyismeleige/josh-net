@@ -1,5 +1,5 @@
 "use client";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/src/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,9 +8,9 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import { Spinner } from "@/components/ui/spinner";
+} from "@/src/ui/dropdown-menu";
+import { Input } from "@/src/ui/input";
+import { Spinner } from "@/src/ui/spinner";
 import {
   Table,
   TableBody,
@@ -18,8 +18,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { useStudentContext } from "@/src/context/student.provider";
+} from "@/src/ui/table";
+import { useStudentContext } from "@/src/context/material.provider";
 import {
   DirectionOptions,
   Files,

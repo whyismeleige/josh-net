@@ -51,5 +51,6 @@ export interface JosephineContextType {
   ) => void;
   access: ChatAccess;
   deleteChat: (chatId: string) => void;
+  batchDelete: (chatIds: string[]) => Promise<void>;
   loading: boolean;
 }

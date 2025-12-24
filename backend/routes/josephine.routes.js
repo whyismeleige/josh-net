@@ -33,6 +33,7 @@ router.use(authenticateToken, authorizeRoles("student"));
  * @returns {Array} List of chat objects
  */
 router.get("/chats", controller.listChats);
+router.delete("/chats", controller.batchDelete);
 
 /**
  * @route   POST /api/v1/josephine/prompt

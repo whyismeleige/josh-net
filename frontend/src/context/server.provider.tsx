@@ -14,11 +14,32 @@ import {
   ServerData,
 } from "../types/server.types";
 import { BACKEND_URL } from "../utils/config";
-import { useAppSelector } from "../hooks/redux";
+import { useAppDispatch, useAppSelector } from "../hooks/redux";
 import { io, Socket } from "socket.io-client";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { addNotification } from "../store/slices/notification.slice";
+import { nanoid } from "@reduxjs/toolkit";
+import fs from "fs";
 
 const ServerContext = createContext<ServerContextType | undefined>(undefined);
+
+function readFileAsURL(file: File) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve(e.target?.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function readFileAsBuffer(file: File): Promise<ArrayBuffer> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as ArrayBuffer);
+    reader.onerror = reject;
+    reader.readAsArrayBuffer(file);
+  });
+}
 
 /**
  *  This is the Flow of Changes Occuring in the Server Page ( Intial Mount )
@@ -34,11 +55,12 @@ const ServerContext = createContext<ServerContextType | undefined>(undefined);
  */
 
 export function ServerProvider({ children }: { children: ReactNode }) {
-  const { accessToken, user } = useAppSelector((state) => state.auth);
-
   const socketRef = useRef<Socket | null>(null); // Socket Ref
   const isIntialMount = useRef(true); // Intial Mount
   const isMobile = useIsMobile();
+  const dispatch = useAppDispatch();
+
+  const { accessToken, user } = useAppSelector((state) => state.auth);
 
   const [messageInput, setMessageInput] = useState<string>("");
   const [serverData, setServerData] = useState<ServerData[]>([]);
@@ -56,8 +78,6 @@ export function ServerProvider({ children }: { children: ReactNode }) {
     null
   );
   const [attachments, setAttachments] = useState<File[]>([]);
-  
-  console.log(attachments);
 
   const leftSidebar = leftSidebarState ?? !isMobile;
   const rightSidebar = rightSidebarState ?? !isMobile;
@@ -90,20 +110,136 @@ export function ServerProvider({ children }: { children: ReactNode }) {
     [isMobile]
   );
 
-  const sendMessage = useCallback(() => {
-    // Send Message Logic
-    if (messageInput.trim() === "") return;
+  const sendFile = async (
+    socket: Socket,
+    index: number,
+    onProgress: (sent: number, total: number) => void,
+    onDone: () => void,
+    onAborted: () => void
+  ) => {
+    const CHUNK_SIZE = 256 * 1024;
 
-    if (socketRef.current) {
-      socketRef.current.emit(
-        "send-message",
-        currentChannel?._id,
-        user?._id,
-        messageInput.trim()
+    const id = nanoid(5);
+    const attachment = attachments[index];
+
+    const onNextKey = `${index}:${id}:next`;
+    const onAbortKey = `${index}:${id}:abort`;
+    const onEndKey = `${index}:${id}:end`;
+
+    const buffer = await readFileAsBuffer(attachment);
+    const size = attachment.size;
+
+    let bytesSent = 0;
+
+    const removeAllListeners = () => {
+      socket.removeAllListeners(onNextKey);
+      socket.removeAllListeners(onAbortKey);
+      socket.removeAllListeners(onEndKey);
+    };
+
+    const sendNextChunk = () => {
+      if (bytesSent < size) {
+        socket.emit(index.toString(), {
+          id,
+          chunk: buffer.slice(bytesSent, bytesSent + CHUNK_SIZE),
+        });
+        bytesSent += CHUNK_SIZE;
+        onProgress(bytesSent, size);
+      } else {
+        socket.emit(index.toString(), {
+          id,
+          metadata: {
+            name: attachment.name,
+            type: attachment.type,
+            size: attachment.size,
+          },
+        });
+      }
+    };
+
+    const abortTransfer = () => {
+      removeAllListeners();
+      onAborted();
+    };
+
+    const endTransfer = () => {
+      removeAllListeners();
+      onDone();
+    };
+
+    socket.on(onNextKey, sendNextChunk);
+    socket.on(onAbortKey, abortTransfer);
+    socket.on(onEndKey, endTransfer);
+    sendNextChunk();
+  };
+
+  const sendMessage = useCallback(async () => {
+    try {
+      if (messageInput.trim() === "" && attachments.length === 0) return;
+
+      const messageData = {
+        channelId: currentChannel?._id,
+        serverId: currentServer?._id,
+        userId: user?._id,
+      };
+
+      if (socketRef.current) {
+        const socket = socketRef.current;
+
+        socket.emit(
+          "send-message",
+          attachments.length,
+          messageData,
+          messageInput.trim()
+        );
+
+        const handleGetFile = async (index: number) => {
+          sendFile(
+            socket,
+            index,
+            (sent, total) => {
+              const percentage = (100 * (sent / total)).toFixed(2);
+              console.log(`${percentage}%`);
+            },
+            () => {
+              console.log("File sent successfully");
+            },
+            () => {
+              console.log("File transfer closed");
+            }
+          );
+        };
+
+        socket.removeAllListeners("get-file");
+        socket.on("get-file", handleGetFile);
+
+        setMessageInput("");
+        setAttachments([]);
+      } else {
+        throw Error("Error in Sending Message, Try Again Later");
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Error in Sending Message, Try Again Later";
+      dispatch(
+        addNotification({
+          type: "error",
+          title: "Error in Message",
+          description: message,
+        })
       );
-      setMessageInput("");
     }
-  }, [messageInput, currentChannel?._id, user?._id]);
+  }, [
+    dispatch,
+    attachments,
+    messageInput,
+    currentServer?._id,
+    currentChannel?._id,
+    socketRef.current,
+    user?._id,
+  ]);
 
   const getMessagesList = useCallback(
     (channelId: string) => {
@@ -190,6 +326,7 @@ export function ServerProvider({ children }: { children: ReactNode }) {
     socket.on("connect", () => {}); // Socket Connected to Server
 
     socket.on("receive-message", (message) => {
+      console.log(message);
       // Receive Message from Channel Room
       setMessagesData((prev) => [...prev, message]);
     });
@@ -256,7 +393,7 @@ export function ServerProvider({ children }: { children: ReactNode }) {
     setLeftSidebar,
     rightSidebar,
     setRightSidebar,
-    setAttachments
+    setAttachments,
   };
 
   return (

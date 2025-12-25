@@ -22,7 +22,7 @@ export default function RightSidebar() {
         />
       )}
       <div
-        className={`border-l w-fit h-full transition-all bg-sidebar duration-300 ease-in-out fixed right-0 md:relative z-50 md:z-auto
+        className={`border-l w-fit h-full  transition-all bg-sidebar duration-300 ease-in-out  fixed right-0 md:relative z-50 md:z-auto
     ${
       rightSidebar
         ? "max-w-100 opacity-100"

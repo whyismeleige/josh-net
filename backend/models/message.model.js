@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const uuid = require("uuid");
 
 const MessageSchema = new mongoose.Schema(
   {
@@ -11,8 +12,34 @@ const MessageSchema = new mongoose.Schema(
       enum: ["text", "image", "file", "embed"],
       default: "text",
     },
+    attachments: [
+      {
+        id: {
+          type: mongoose.Schema.Types.String,
+          default: () => uuid.v4().replace(/\-/g, ""),
+        },
+        fileName: {
+          type: String,
+          trim: true,
+          required: true,
+        },
+        s3Key: {
+          type: String,
+          required: true,
+          trim: true,
+        },
+        s3URL: {
+          type: String,
+          required: true,
+          trim: true,
+        },
+        fileSize: mongoose.Schema.Types.Int32,
+        mimeType: String,
+      },
+    ],
     content: {
       type: String,
+      trim: true,
     },
     timestamp: {
       type: Date,
@@ -52,4 +79,8 @@ const MessageSchema = new mongoose.Schema(
   }
 );
 
+MessageSchema.methods.saveAttachments = async function (attachments) {
+  this.attachments = attachments;
+  return await this.save();
+};
 module.exports = mongoose.model("Message", MessageSchema);

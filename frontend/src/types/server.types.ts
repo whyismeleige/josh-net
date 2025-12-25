@@ -18,6 +18,16 @@ export type ServerType =
 
 export type MessageType = "text" | "image" | "file" | "embed";
 
+export interface Attachment {
+  fileName: string;
+  fileSize: number;
+  id: string;
+  mimeType: string;
+  s3Key: string;
+  s3URL: string;
+  _id: string;
+}
+
 export interface ServerData {
   _id: string;
   name: string;
@@ -46,9 +56,10 @@ export interface ChannelData {
 
 export interface MessageData {
   _id: string;
-  content: string;
+  content?: string | null;
   createdAt: string;
   deleted: string;
+  attachments: Attachment[];
   deletedAt?: string | null;
   editedTimestamp?: string | null;
   timestamp: string;
@@ -67,7 +78,7 @@ export interface ServerContextType {
   changeChannels: (channel: ChannelData) => void;
   messageInput: string;
   setMessageInput: (value: string) => void;
-  sendMessage: () => void;
+  sendMessage: () => Promise<void>;
   messages: MessageData[];
   leftSidebar: boolean;
   setLeftSidebar: (toggle: boolean) => void;

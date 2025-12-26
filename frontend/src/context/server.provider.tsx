@@ -8,6 +8,8 @@ import {
   useState,
 } from "react";
 import {
+  Attachment,
+  AttachmentTransferProcess,
   ChannelData,
   MessageData,
   ServerContextType,
@@ -19,18 +21,8 @@ import { io, Socket } from "socket.io-client";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { addNotification } from "../store/slices/notification.slice";
 import { nanoid } from "@reduxjs/toolkit";
-import fs from "fs";
 
 const ServerContext = createContext<ServerContextType | undefined>(undefined);
-
-function readFileAsURL(file: File) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (e) => resolve(e.target?.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
 
 function readFileAsBuffer(file: File): Promise<ArrayBuffer> {
   return new Promise((resolve, reject) => {
@@ -55,10 +47,12 @@ function readFileAsBuffer(file: File): Promise<ArrayBuffer> {
  */
 
 export function ServerProvider({ children }: { children: ReactNode }) {
-  const socketRef = useRef<Socket | null>(null); // Socket Ref
-  const isIntialMount = useRef(true); // Intial Mount
   const isMobile = useIsMobile();
   const dispatch = useAppDispatch();
+
+  const socketRef = useRef<Socket | null>(null); // Socket Ref
+  const isIntialMount = useRef(true); // Intial Mount
+  const pendingMessagesRef = useRef<Map<string, boolean>>(new Map());
 
   const { accessToken, user } = useAppSelector((state) => state.auth);
 
@@ -81,6 +75,33 @@ export function ServerProvider({ children }: { children: ReactNode }) {
 
   const leftSidebar = leftSidebarState ?? !isMobile;
   const rightSidebar = rightSidebarState ?? !isMobile;
+
+  const updateAttachmentStatus = (
+    messageId: string,
+    attachmentIndex: number,
+    data: {
+      transferring?: boolean;
+      transferProcess?: AttachmentTransferProcess;
+      transferProgress?: number;
+    }
+  ) => {
+    setMessagesData((prevMessages) =>
+      prevMessages.map((message) => {
+        if (message._id !== messageId) return message;
+        return {
+          ...message,
+          attachments: message.attachments.map((attachment, index) =>
+            index === attachmentIndex
+              ? {
+                  ...attachment,
+                  ...data,
+                }
+              : attachment
+          ),
+        };
+      })
+    );
+  };
 
   const setLeftSidebar = useCallback(
     (value: boolean | ((prev: boolean) => boolean)) => {
@@ -139,11 +160,12 @@ export function ServerProvider({ children }: { children: ReactNode }) {
 
     const sendNextChunk = () => {
       if (bytesSent < size) {
+        const chunkSize = Math.min(CHUNK_SIZE, size - bytesSent);
         socket.emit(index.toString(), {
           id,
-          chunk: buffer.slice(bytesSent, bytesSent + CHUNK_SIZE),
+          chunk: buffer.slice(bytesSent, bytesSent + chunkSize),
         });
-        bytesSent += CHUNK_SIZE;
+        bytesSent += chunkSize;
         onProgress(bytesSent, size);
       } else {
         socket.emit(index.toString(), {
@@ -175,13 +197,49 @@ export function ServerProvider({ children }: { children: ReactNode }) {
 
   const sendMessage = useCallback(async () => {
     try {
-      if (messageInput.trim() === "" && attachments.length === 0) return;
+      if (!user || (messageInput.trim() === "" && attachments.length === 0))
+        return;
 
       const messageData = {
         channelId: currentChannel?._id,
         serverId: currentServer?._id,
         userId: user?._id,
       };
+
+      console.log("The attachments currently are", attachments);
+
+      const newMessageAttachments: Attachment[] = attachments.map(
+        (attachment) => ({
+          _id: nanoid(5),
+          fileName: attachment.name,
+          fileSize: attachment.size,
+          id: nanoid(5),
+          mimeType: attachment.type,
+          s3Key: "",
+          s3URL: "",
+          transferProcess: "upload",
+          transferring: true,
+        })
+      );
+
+      const newMessage: MessageData = {
+        _id: nanoid(5),
+        content: messageInput.trim(),
+        type: "text",
+        createdAt: "",
+        timestamp: "",
+        updatedAt: "",
+        deletedAt: "",
+        userId: user,
+        attachments: newMessageAttachments,
+        deleted: "",
+      };
+
+      console.log("The New Message is", newMessage);
+
+      pendingMessagesRef.current.set(newMessage._id, true);
+      console.log("Refs after adding ", pendingMessagesRef.current);
+      setMessagesData((prevMessages) => [...prevMessages, newMessage]);
 
       if (socketRef.current) {
         const socket = socketRef.current;
@@ -190,7 +248,8 @@ export function ServerProvider({ children }: { children: ReactNode }) {
           "send-message",
           attachments.length,
           messageData,
-          messageInput.trim()
+          messageInput.trim(),
+          newMessage._id
         );
 
         const handleGetFile = async (index: number) => {
@@ -198,20 +257,46 @@ export function ServerProvider({ children }: { children: ReactNode }) {
             socket,
             index,
             (sent, total) => {
-              const percentage = (100 * (sent / total)).toFixed(2);
-              console.log(`${percentage}%`);
+              const transferProgress = 100 * (sent / total);
+              updateAttachmentStatus(newMessage._id, index, {
+                transferProgress,
+              });
             },
             () => {
-              console.log("File sent successfully");
+              updateAttachmentStatus(newMessage._id, index, {
+                transferring: false,
+              });
             },
             () => {
-              console.log("File transfer closed");
+              updateAttachmentStatus(newMessage._id, index, {
+                transferring: false,
+              });
             }
           );
         };
 
+        const handleAllUploadsComplete = () => {
+          console.log("All Messages were successful");
+          console.log(
+            `Is it ${newMessage._id} available`,
+            pendingMessagesRef.current.has(newMessage._id)
+          );
+          pendingMessagesRef.current.set(newMessage._id, false);
+          console.log("Refs after setting", pendingMessagesRef.current);
+        };
+
+        const handleUploadError = (error: Error) => {
+          console.error("Upload Error", error);
+          pendingMessagesRef.current.set(newMessage._id, false);
+        };
+
         socket.removeAllListeners("get-file");
+        socket.removeAllListeners("all-uploads-complete");
+        socket.removeAllListeners("upload-error");
+
+        socket.on("all-uploads-complete", handleAllUploadsComplete);
         socket.on("get-file", handleGetFile);
+        socket.on("upload-error", handleUploadError);
 
         setMessageInput("");
         setAttachments([]);
@@ -239,6 +324,7 @@ export function ServerProvider({ children }: { children: ReactNode }) {
     currentChannel?._id,
     socketRef.current,
     user?._id,
+    user,
   ]);
 
   const getMessagesList = useCallback(
@@ -325,10 +411,26 @@ export function ServerProvider({ children }: { children: ReactNode }) {
 
     socket.on("connect", () => {}); // Socket Connected to Server
 
-    socket.on("receive-message", (message) => {
-      console.log(message);
+    socket.on("receive-message", (newMessage, tempMsgId) => {
       // Receive Message from Channel Room
-      setMessagesData((prev) => [...prev, message]);
+      console.log("Received Temp Message ID", tempMsgId);
+      console.log("Current Refs", pendingMessagesRef.current);
+      console.log("Is it available", pendingMessagesRef.current.has(tempMsgId));
+
+      console.log("The new message received is", newMessage);
+      if (
+        pendingMessagesRef.current.has(tempMsgId) &&
+        !pendingMessagesRef.current.get(tempMsgId)
+      ) {
+        setMessagesData((prev) =>
+          prev.map((prevMessage) =>
+            prevMessage._id === tempMsgId ? newMessage : prevMessage
+          )
+        );
+        pendingMessagesRef.current.delete(tempMsgId);
+      } else {
+        setMessagesData((prev) => [...prev, newMessage]);
+      }
     });
 
     socket.on("error", (error) => {

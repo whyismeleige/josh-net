@@ -18,6 +18,8 @@ export type ServerType =
 
 export type MessageType = "text" | "image" | "file" | "embed";
 
+export type AttachmentTransferProcess = "download" | "upload";
+
 export interface Attachment {
   fileName: string;
   fileSize: number;
@@ -26,6 +28,9 @@ export interface Attachment {
   s3Key: string;
   s3URL: string;
   _id: string;
+  transferring?: boolean;
+  transferProcess?: AttachmentTransferProcess;
+  transferProgress?: number;
 }
 
 export interface ServerData {

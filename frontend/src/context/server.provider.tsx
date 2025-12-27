@@ -20,7 +20,7 @@ import { useAppDispatch, useAppSelector } from "../hooks/redux";
 import { io, Socket } from "socket.io-client";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { addNotification } from "../store/slices/notification.slice";
-import { nanoid } from "@reduxjs/toolkit";
+import { current, nanoid } from "@reduxjs/toolkit";
 
 const ServerContext = createContext<ServerContextType | undefined>(undefined);
 
@@ -53,10 +53,12 @@ export function ServerProvider({ children }: { children: ReactNode }) {
   const socketRef = useRef<Socket | null>(null); // Socket Ref
   const isIntialMount = useRef(true); // Intial Mount
   const pendingMessagesRef = useRef<Map<string, boolean>>(new Map());
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const { accessToken, user } = useAppSelector((state) => state.auth);
 
   const [messageInput, setMessageInput] = useState<string>("");
+  const [typingStatus, setTypingStatus] = useState<string>("");
   const [serverData, setServerData] = useState<ServerData[]>([]);
   const [currentServer, setCurrentServer] = useState<ServerData | null>(null);
   const [channelData, setChannelData] = useState<ChannelData[]>([]);
@@ -75,6 +77,21 @@ export function ServerProvider({ children }: { children: ReactNode }) {
 
   const leftSidebar = leftSidebarState ?? !isMobile;
   const rightSidebar = rightSidebarState ?? !isMobile;
+
+  const changeMessage = (message: string) => {
+    setMessageInput(message);
+    if (socketRef.current) {
+      socketRef.current.emit(
+        "typing",
+        currentChannel?._id,
+        user?._id,
+        user?.name
+      );
+    }
+  };
+
+  const checkMessageInTransit = (messageId: string): boolean =>
+    pendingMessagesRef.current.has(messageId);
 
   const updateAttachmentStatus = (
     messageId: string,
@@ -133,7 +150,8 @@ export function ServerProvider({ children }: { children: ReactNode }) {
 
   const sendFile = async (
     socket: Socket,
-    index: number,
+    key: string,
+    attachment: File,
     onProgress: (sent: number, total: number) => void,
     onDone: () => void,
     onAborted: () => void
@@ -141,11 +159,10 @@ export function ServerProvider({ children }: { children: ReactNode }) {
     const CHUNK_SIZE = 256 * 1024;
 
     const id = nanoid(5);
-    const attachment = attachments[index];
 
-    const onNextKey = `${index}:${id}:next`;
-    const onAbortKey = `${index}:${id}:abort`;
-    const onEndKey = `${index}:${id}:end`;
+    const onNextKey = `${key}:${id}:next`;
+    const onAbortKey = `${key}:${id}:abort`;
+    const onEndKey = `${key}:${id}:end`;
 
     const buffer = await readFileAsBuffer(attachment);
     const size = attachment.size;
@@ -161,14 +178,14 @@ export function ServerProvider({ children }: { children: ReactNode }) {
     const sendNextChunk = () => {
       if (bytesSent < size) {
         const chunkSize = Math.min(CHUNK_SIZE, size - bytesSent);
-        socket.emit(index.toString(), {
+        socket.emit(key, {
           id,
           chunk: buffer.slice(bytesSent, bytesSent + chunkSize),
         });
         bytesSent += chunkSize;
         onProgress(bytesSent, size);
       } else {
-        socket.emit(index.toString(), {
+        socket.emit(key, {
           id,
           metadata: {
             name: attachment.name,
@@ -197,8 +214,13 @@ export function ServerProvider({ children }: { children: ReactNode }) {
 
   const sendMessage = useCallback(async () => {
     try {
-      if (!user || (messageInput.trim() === "" && attachments.length === 0))
-        return;
+      const currentAttachments = [...attachments];
+      const message = messageInput.trim();
+
+      setMessageInput("");
+      setAttachments([]);
+
+      if (!user || (message === "" && currentAttachments.length === 0)) return;
 
       const messageData = {
         channelId: currentChannel?._id,
@@ -206,9 +228,7 @@ export function ServerProvider({ children }: { children: ReactNode }) {
         userId: user?._id,
       };
 
-      console.log("The attachments currently are", attachments);
-
-      const newMessageAttachments: Attachment[] = attachments.map(
+      const newMessageAttachments: Attachment[] = currentAttachments.map(
         (attachment) => ({
           _id: nanoid(5),
           fileName: attachment.name,
@@ -224,38 +244,37 @@ export function ServerProvider({ children }: { children: ReactNode }) {
 
       const newMessage: MessageData = {
         _id: nanoid(5),
-        content: messageInput.trim(),
+        content: message,
         type: "text",
-        createdAt: "",
-        timestamp: "",
-        updatedAt: "",
+        createdAt: new Date().toISOString(),
+        timestamp: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
         deletedAt: "",
         userId: user,
         attachments: newMessageAttachments,
         deleted: "",
       };
 
-      console.log("The New Message is", newMessage);
-
       pendingMessagesRef.current.set(newMessage._id, true);
-      console.log("Refs after adding ", pendingMessagesRef.current);
       setMessagesData((prevMessages) => [...prevMessages, newMessage]);
 
       if (socketRef.current) {
         const socket = socketRef.current;
 
         socket.emit(
-          "send-message",
-          attachments.length,
+          `send-message`,
+          currentAttachments.length,
           messageData,
-          messageInput.trim(),
+          message,
           newMessage._id
         );
 
         const handleGetFile = async (index: number) => {
+          const key = `${index}:${newMessage._id}`;
           sendFile(
             socket,
-            index,
+            key,
+            currentAttachments[index],
             (sent, total) => {
               const transferProgress = 100 * (sent / total);
               updateAttachmentStatus(newMessage._id, index, {
@@ -276,30 +295,23 @@ export function ServerProvider({ children }: { children: ReactNode }) {
         };
 
         const handleAllUploadsComplete = () => {
-          console.log("All Messages were successful");
-          console.log(
-            `Is it ${newMessage._id} available`,
-            pendingMessagesRef.current.has(newMessage._id)
-          );
           pendingMessagesRef.current.set(newMessage._id, false);
-          console.log("Refs after setting", pendingMessagesRef.current);
         };
 
         const handleUploadError = (error: Error) => {
-          console.error("Upload Error", error);
           pendingMessagesRef.current.set(newMessage._id, false);
         };
 
-        socket.removeAllListeners("get-file");
-        socket.removeAllListeners("all-uploads-complete");
-        socket.removeAllListeners("upload-error");
+        socket.removeAllListeners(`get-file:${newMessage._id}`);
+        socket.removeAllListeners(`all-uploads-complete:${newMessage._id}`);
+        socket.removeAllListeners(`upload-error:${newMessage._id}`);
 
-        socket.on("all-uploads-complete", handleAllUploadsComplete);
-        socket.on("get-file", handleGetFile);
-        socket.on("upload-error", handleUploadError);
-
-        setMessageInput("");
-        setAttachments([]);
+        socket.on(
+          `all-uploads-complete:${newMessage._id}`,
+          handleAllUploadsComplete
+        );
+        socket.on(`get-file:${newMessage._id}`, handleGetFile);
+        socket.on(`upload-error:${newMessage._id}`, handleUploadError);
       } else {
         throw Error("Error in Sending Message, Try Again Later");
       }
@@ -413,11 +425,7 @@ export function ServerProvider({ children }: { children: ReactNode }) {
 
     socket.on("receive-message", (newMessage, tempMsgId) => {
       // Receive Message from Channel Room
-      console.log("Received Temp Message ID", tempMsgId);
-      console.log("Current Refs", pendingMessagesRef.current);
-      console.log("Is it available", pendingMessagesRef.current.has(tempMsgId));
 
-      console.log("The new message received is", newMessage);
       if (
         pendingMessagesRef.current.has(tempMsgId) &&
         !pendingMessagesRef.current.get(tempMsgId)
@@ -431,6 +439,16 @@ export function ServerProvider({ children }: { children: ReactNode }) {
       } else {
         setMessagesData((prev) => [...prev, newMessage]);
       }
+    });
+
+    socket.on("typing-indicator", (message) => {
+      setTypingStatus(message);
+
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+
+      typingTimeoutRef.current = setTimeout(() => {
+        setTypingStatus("");
+      }, 2000);
     });
 
     socket.on("error", (error) => {
@@ -488,7 +506,7 @@ export function ServerProvider({ children }: { children: ReactNode }) {
     changeServers,
     changeChannels,
     messageInput,
-    setMessageInput,
+    changeMessage,
     sendMessage,
     messages,
     leftSidebar,
@@ -496,6 +514,8 @@ export function ServerProvider({ children }: { children: ReactNode }) {
     rightSidebar,
     setRightSidebar,
     setAttachments,
+    typingStatus,
+    checkMessageInTransit,
   };
 
   return (

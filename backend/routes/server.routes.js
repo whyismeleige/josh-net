@@ -19,4 +19,8 @@ router.get("/channel/list", controller.listChannels);
 // Message Routes
 router.get("/message/list", controller.listMessages);
 
+// Media Routes
+router.get("/media/stream", controller.streamMedia);
+router.get("/media/download", controller.downloadMedia);
+
 module.exports = router;

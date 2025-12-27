@@ -43,7 +43,6 @@ export default function JosephineAllChats() {
         selectedChatIDs.add(chatId);
       }
     }
-    console.log(newSelected);
     setSelectedChatIDs(newSelected);
     setLastSelected(index);
   };

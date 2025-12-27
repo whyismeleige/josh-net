@@ -270,7 +270,7 @@ export function FileAttachmentViewer({
           <div className="w-full h-full flex items-center justify-center p-2">
             {attachedFile.file.type.startsWith("image/") &&
             attachedFile.preview ? (
-              <Image
+              <img
                 src={attachedFile.preview}
                 alt={attachedFile.file.name}
                 className="max-w-full max-h-full object-contain"

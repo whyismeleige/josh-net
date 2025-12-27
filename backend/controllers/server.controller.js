@@ -1,10 +1,13 @@
 const db = require("../models");
+const path = require("path");
 
 const { sanitizeUser } = require("../utils/auth.utils");
+const { downloadSingleFile } = require("../utils/s3.utils");
 
 const Server = db.server;
 const User = db.user;
 const Channel = db.channel;
+const Message = db.message;
 
 exports.createServer = async (req, res) => {
   try {
@@ -172,6 +175,56 @@ exports.listMessages = async (req, res) => {
     console.error("Error in Retrieving Messages", error);
     res.status(500).send({
       message: error.message || "Server Error",
+      type: "error",
+    });
+  }
+};
+
+exports.streamMedia = async (req, res) => {
+  try {
+    const key = req.query.key;
+
+    const response = await downloadSingleFile(key);
+
+    res.setHeader("Content-Type", response.ContentType);
+    res.setHeader("Content-Length", response.ContentLength);
+    res.setHeader(
+      "Content-Disposition",
+      `inline; filename="${path.basename(key)}"`
+    );
+
+    res.setHeader("Cache-Control", "public, max-age=31536000");
+
+    response.Body.pipe(res);
+  } catch (error) {
+    console.error("Error in Streaming Media", error);
+    res.status(500).send({
+      message: error.message || "Server Error",
+      type: "error",
+    });
+  }
+};
+
+exports.downloadMedia = async (req, res) => {
+  try {
+    const key = req.query.key;
+
+    const response = await downloadSingleFile(key);
+
+    res.setHeader("Content-Type", response.ContentType);
+    res.setHeader("Content-Length", response.ContentLength);
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${path.basename(key)}"`
+    );
+
+    res.setHeader("Cache-Control", "public, max-age=31536000");
+
+    response.Body.pipe(res);
+  } catch (error) {
+    console.error("Error in Downloading Media", error);
+    res.status(500).send({
+      message: "Error in Downloading Media",
       type: "error",
     });
   }

@@ -21,6 +21,19 @@ async function s3URLToPDFBase64(key) {
   }
 }
 
+async function downloadSingleFile(key) {
+  try {
+    const command = new GetObjectCommand({
+      Bucket: BUCKET_NAME,
+      Key: key,
+    });
+    const response = await s3Client.send(command);
+    return response;
+  } catch (error) {
+    throw error;
+  }
+}
+
 async function uploadS3File(key, fileBuffer) {
   try {
     const command = new PutObjectCommand({
@@ -37,6 +50,4 @@ async function uploadS3File(key, fileBuffer) {
   }
 }
 
-
-
-module.exports = { s3URLToPDFBase64, uploadS3File };
+module.exports = { downloadSingleFile, s3URLToPDFBase64, uploadS3File };

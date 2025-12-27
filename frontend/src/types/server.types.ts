@@ -82,7 +82,7 @@ export interface ServerContextType {
   changeServers: (server: ServerData) => void;
   changeChannels: (channel: ChannelData) => void;
   messageInput: string;
-  setMessageInput: (value: string) => void;
+  changeMessage: (message: string) => void;
   sendMessage: () => Promise<void>;
   messages: MessageData[];
   leftSidebar: boolean;
@@ -90,4 +90,6 @@ export interface ServerContextType {
   rightSidebar: boolean;
   setRightSidebar: (toggle: boolean) => void;
   setAttachments: (files: File[]) => void;
+  typingStatus: string;
+  checkMessageInTransit: (messageId: string) => boolean;
 }

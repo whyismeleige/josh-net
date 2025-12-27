@@ -111,8 +111,6 @@ export function JosephineProvider({ children }: { children: ReactNode }) {
 
         const data = await response.json();
 
-        console.log(data);
-
         setChats([]);
         setCurrentChat(null);
 

@@ -121,7 +121,6 @@ export const loginUser = createAsyncThunk(
         },
       };
     } catch (error: unknown) {
-      console.log("The error is", error);
       const message =
         error instanceof Error ? error.message : "An error occurred";
       return rejectWithValue(message);

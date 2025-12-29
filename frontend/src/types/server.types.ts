@@ -4,6 +4,8 @@ export type ViewMode = "inbox" | "servers" | "friends";
 
 export type FriendsState = "all" | "requests" | "pending";
 
+export type FriendRequestStatus = "outgoing" | "incoming";
+
 export type ChannelType =
   | "dm"
   | "group_dm"
@@ -23,6 +25,20 @@ export type ServerType =
 export type MessageType = "text" | "image" | "file" | "embed";
 
 export type AttachmentTransferProcess = "download" | "upload";
+
+export interface Friend {
+  _id: string;
+  user: User;
+  channel: string;
+  since: string;
+}
+
+export interface FriendRequests {
+  _id: string;
+  user: User;
+  status: FriendRequestStatus;
+  requestedAt: string;
+}
 
 export interface Attachment {
   fileName: string;

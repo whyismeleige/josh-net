@@ -11,6 +11,8 @@ import {
   Attachment,
   AttachmentTransferProcess,
   ChannelData,
+  Friend,
+  FriendRequestStatus,
   FriendsState,
   MessageData,
   ServerContextType,
@@ -23,7 +25,6 @@ import { io, Socket } from "socket.io-client";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { addNotification } from "../store/slices/notification.slice";
 import { nanoid } from "@reduxjs/toolkit";
-import { User } from "../types/auth.types";
 
 const ServerContext = createContext<ServerContextType | undefined>(undefined);
 
@@ -79,8 +80,10 @@ export function ServerProvider({ children }: { children: ReactNode }) {
     null
   );
   const [attachments, setAttachments] = useState<File[]>([]);
-  const [friends, setFriends] = useState<User[]>([]);
-  const [requests, setRequests] = useState([]);
+  const [friendsList, setFriendsList] = useState<Friend[]>([]);
+  const [friendRequests, setFriendRequests] = useState<FriendRequestStatus[]>(
+    []
+  );
 
   const leftSidebar = leftSidebarState ?? !isMobile;
   const rightSidebar = rightSidebarState ?? !isMobile;
@@ -428,9 +431,25 @@ export function ServerProvider({ children }: { children: ReactNode }) {
 
       const data = await response.json();
 
-      
+      if (data.type !== "success") {
+        throw new Error(data.message);
+      }
+
+      setFriendsList(data.friends);
+      setFriendRequests(data.requests);
+
     } catch (error) {
-      
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Error in Sending Message, Try Again Later";
+      dispatch(
+        addNotification({
+          type: "error",
+          title: "Error in Sending Message Message",
+          description: message,
+        })
+      );
     }
   };
 
@@ -505,9 +524,10 @@ export function ServerProvider({ children }: { children: ReactNode }) {
     if (isIntialMount.current) {
       // Intial Mount
       isIntialMount.current = false;
-      getServerList(); // Get The Server List of the user
+      getFriendsList();
+      getServerList();
     }
-  }, [getServerList]);
+  }, [getServerList, getFriendsList]);
 
   useEffect(() => {
     if (!currentChannel || !socketRef.current) return;

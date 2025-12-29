@@ -1,5 +1,9 @@
 import { User } from "./auth.types";
 
+export type ViewMode = "inbox" | "servers" | "friends";
+
+export type FriendsState = "all" | "requests" | "pending";
+
 export type ChannelType =
   | "dm"
   | "group_dm"
@@ -74,6 +78,9 @@ export interface MessageData {
 }
 
 export interface ServerContextType {
+  view: ViewMode;
+  friendsView: FriendsState;
+  setFriendsView: (view: FriendsState) => void;
   serverData: ServerData[];
   getServerList: () => void;
   currentServer: ServerData | null;

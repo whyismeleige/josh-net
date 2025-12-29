@@ -194,6 +194,58 @@ const UserSchema = new mongoose.Schema(
         ref: "Chat",
       },
     ],
+    friends: [
+      {
+        user: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+          required: true,
+        },
+        channel: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Channel",
+          required: true,
+        },
+        since: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
+    requests: [
+      {
+        user: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+          required: true,
+        },
+        status: {
+          type: String,
+          enum: ["outgoing", "incoming"],
+        },
+        requestedAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
+    blockedUsers: [
+      {
+        user: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+        },
+        blockedAt: {
+          type: Date,
+          ref: Date.now,
+        },
+        reason: {
+          type: String,
+          maxlength: [200, "Block reason cannot exceed 200 characters"],
+          default: "No reason provided",
+        },
+      },
+    ],
   },
   {
     timestamps: true,
@@ -227,6 +279,23 @@ UserSchema.methods.changePassword = async function (newPassword) {
   this.mustChangePassword = false;
   this.password = newPassword;
   await this.save();
+};
+
+UserSchema.methods.requestExists = function (receiverId) {
+  return this.requests.find(
+    (request) => request.user.toString() === receiverId.toString()
+  );
+};
+
+UserSchema.methods.requestProcess = async function (userId, status) {
+  this.requests.push({ user: userId, status });
+  await this.save();
+};
+
+UserSchema.methods.isUserBlocked = function (senderId) {
+  return this.blockedUsers.find(
+    (doc) => doc.user.toString() === senderId.toString()
+  );
 };
 
 UserSchema.methods.isLocked = function () {

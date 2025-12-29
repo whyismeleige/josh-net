@@ -191,6 +191,7 @@ const downloadFile = async (
     const link = document.createElement("a");
     link.href = url;
     link.download = fileName;
+    if(!link) return;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -434,8 +435,8 @@ const ImageAttachmentGrid = ({ images }: { images: Attachment[] }) => {
         >
           <ImageAttachment image={img} />
           {/* Overlay Actions */}
-          <div className="absolute inset-0 group flex items-center justify-center gap-2">
-            <div className="opacity-0 flex gap-2 group-hover:opacity-100 transition-opacity">
+          <div className="absolute inset-0 group/image flex items-center justify-center gap-2">
+            <div className="opacity-0 flex gap-2 group-hover/image:opacity-100 transition-opacity">
               <Button
                 variant="secondary"
                 size="icon"

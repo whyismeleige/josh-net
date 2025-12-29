@@ -11,6 +11,7 @@ import {
   MessagesSquare,
   Hash,
   PanelLeft,
+  UsersRound,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/src/ui/avatar";
 import { Button } from "@/src/ui/button";
@@ -24,6 +25,7 @@ import {
   AccordionTrigger,
 } from "@/src/ui/accordion";
 import { useAppSelector } from "@/src/hooks/redux";
+import AddFriendDialog from "./dialogs";
 
 export const getChannelIcon = (channelType: ChannelType) => {
   switch (channelType) {
@@ -70,8 +72,17 @@ const dummyChannels = Array(100).fill({
   updatedAt: "",
 });
 
+const dummyDMs = Array(100).fill({
+  user: {
+    name: `Random Name`,
+    avatarURL: `https://img.icons8.com/?size=48&id=kDoeg22e5jUY&format=png`,
+  },
+  channelID: "Random Channel",
+});
+
 export default function ServerSidebar() {
   const {
+    view,
     serverData,
     currentServer,
     channelData,
@@ -164,9 +175,19 @@ export default function ServerSidebar() {
             {/* Panel Header */}
             <div className="border-b p-4 space-y-3">
               <div className="flex items-center justify-between">
-                <h2 className="text-base font-medium text-foreground">
-                  {currentServer?.name}
-                </h2>
+                {view === "inbox" || view === "friends" ? (
+                  <div className="flex flex-col gap-2 items-start">
+                    <Button variant="outline" className="flex-1">
+                      <UsersRound />
+                      Friends
+                    </Button>
+                    <AddFriendDialog triggerClass="hidden md:flex"/>
+                  </div>
+                ) : (
+                  <h2 className="text-base font-medium text-foreground">
+                    {currentServer?.name}
+                  </h2>
+                )}
                 <Button
                   className="md:hidden p-1 hover:bg-sidebar-accent rounded-md transition-colors size-7"
                   variant="ghost"
@@ -178,11 +199,15 @@ export default function ServerSidebar() {
               </div>
             </div>
 
-            <ChannelList
-              channelData={channelData}
-              changeChannels={changeChannels}
-              currentChannel={currentChannel}
-            />
+            {view === "inbox" || view === "friends" ? (
+              <DirectMessageList />
+            ) : (
+              <ChannelList
+                channelData={channelData}
+                changeChannels={changeChannels}
+                currentChannel={currentChannel}
+              />
+            )}
           </div>
           <div className="absolute bottom-0 left-0 bg-card border-t p-2 m-1 mb-3 rounded-xl flex items-center gap-2 shadow-lg">
             <Avatar className="rounded-lg">
@@ -206,6 +231,30 @@ export default function ServerSidebar() {
         </div>
       </div>
     </>
+  );
+}
+
+export function DirectMessageList() {
+  return (
+    <div className="w-full overflow-y-auto custom-scrollbar">
+      <span className="mx-4 text-muted-foreground hover:no-underline hover:text-foreground">
+        Direct Messages
+      </span>
+      {dummyDMs.map((dm, index) => (
+        <div
+          key={index}
+          className="flex items-center gap-2 px-2 py-1.5 mx-2 rounded text-sm cursor-pointer transition-colors text-muted-foreground hover:bg-sidebar-accent/50 hover:text-foreground group"
+        >
+          <Avatar className="rounded-lg">
+            <AvatarImage src={dm.user.avatarURL} alt={dm.user.name} />
+            <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+          </Avatar>
+          <div className="grid flex-1 text-left text-sm leading-tight">
+            <span className="truncate font-medium">{dm.user.name}</span>
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 

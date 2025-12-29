@@ -68,6 +68,12 @@ const serverRoutes = require("./routes/server.routes");
  */
 const josephineRoutes = require("./routes/josephine.routes");
 
+/**
+ * Inbox routes
+ * Handles the inbox routes of the user
+ */
+const inboxRoutes = require("./routes/inbox.routes");
+
 // ============================================================================
 // APPLICATION CONFIGURATION
 // ============================================================================
@@ -136,6 +142,7 @@ app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/student", studentRoutes);
 app.use("/api/v1/server", serverRoutes);
 app.use("/api/v1/josephine", josephineRoutes);
+app.use("/api/v1/inbox", inboxRoutes);
 
 // ============================================================================
 // UTILITY ROUTES

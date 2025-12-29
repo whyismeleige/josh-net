@@ -9,6 +9,16 @@ function getTypingKey(channelId, userId) {
 }
 
 module.exports = (io, socket) => {
+  socket.on("register-user", (userId) => {
+    console.log("New User Registered", userId);
+    socket.join(userId.toString());
+  });
+
+  socket.on("deregister-user", (userId) => {
+    console.log("User Deregistered successfully", userId);
+    socket.leave(userId.toString());
+  });
+
   socket.on("join-channel", async (channelId, userId) => {
     socket.join(channelId);
     console.log(`User ${userId} join Channel ${channelId}`);
@@ -21,12 +31,12 @@ module.exports = (io, socket) => {
 
   socket.on("typing", async (channelId, userId, userName) => {
     const key = getTypingKey(channelId, userId);
-    
+
     if (typingTimeouts.has(key)) {
       const existing = typingTimeouts.get(key);
       clearTimeout(existing.timeout);
     }
-  
+
     const timeout = setTimeout(() => {
       socket.to(channelId).emit("typing-indicator", `${userName} is typing...`);
       typingTimeouts.delete(key);

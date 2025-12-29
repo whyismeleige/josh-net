@@ -21,6 +21,8 @@ exports.authenticateToken = async (req, res, next) => {
     if (!user) {
       user = await User.findById(id);
       await redisClient.setEx(id, 300, JSON.stringify(user));
+    } else {
+      user = User.hydrate(JSON.parse(user));
     }
 
 
@@ -32,7 +34,7 @@ exports.authenticateToken = async (req, res, next) => {
       });
     }
 
-    req.user = JSON.parse(user);
+    req.user = user;
 
     next();
   } catch (error) {

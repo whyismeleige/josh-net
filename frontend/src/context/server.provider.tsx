@@ -11,16 +11,19 @@ import {
   Attachment,
   AttachmentTransferProcess,
   ChannelData,
+  FriendsState,
   MessageData,
   ServerContextType,
   ServerData,
+  ViewMode,
 } from "../types/server.types";
 import { BACKEND_URL } from "../utils/config";
 import { useAppDispatch, useAppSelector } from "../hooks/redux";
 import { io, Socket } from "socket.io-client";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { addNotification } from "../store/slices/notification.slice";
-import { current, nanoid } from "@reduxjs/toolkit";
+import { nanoid } from "@reduxjs/toolkit";
+import { User } from "../types/auth.types";
 
 const ServerContext = createContext<ServerContextType | undefined>(undefined);
 
@@ -57,6 +60,8 @@ export function ServerProvider({ children }: { children: ReactNode }) {
 
   const { accessToken, user } = useAppSelector((state) => state.auth);
 
+  const [view, setView] = useState<ViewMode>("friends");
+  const [friendsView, setFriendsView] = useState<FriendsState>("all");
   const [messageInput, setMessageInput] = useState<string>("");
   const [typingStatus, setTypingStatus] = useState<string>("");
   const [serverData, setServerData] = useState<ServerData[]>([]);
@@ -74,6 +79,8 @@ export function ServerProvider({ children }: { children: ReactNode }) {
     null
   );
   const [attachments, setAttachments] = useState<File[]>([]);
+  const [friends, setFriends] = useState<User[]>([]);
+  const [requests, setRequests] = useState([]);
 
   const leftSidebar = leftSidebarState ?? !isMobile;
   const rightSidebar = rightSidebarState ?? !isMobile;
@@ -410,6 +417,23 @@ export function ServerProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const getFriendsList = async () => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/v1/inbox/friends`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      const data = await response.json();
+
+      
+    } catch (error) {
+      
+    }
+  };
+
   useEffect(() => {
     if (!socketRef.current) {
       // Socket intialization
@@ -421,7 +445,17 @@ export function ServerProvider({ children }: { children: ReactNode }) {
 
     const socket = socketRef.current;
 
-    socket.on("connect", () => {}); // Socket Connected to Server
+    socket.on("connect", () => {
+      // Socket connecting to Server
+      console.log("Connecting to Socket");
+    });
+
+    socket.emit("register-user", user?._id);
+
+    socket.on("friend-request-received", (sender, createdAt) => {
+      console.log(sender);
+      console.log(createdAt);
+    });
 
     socket.on("receive-message", (newMessage, tempMsgId) => {
       // Receive Message from Channel Room
@@ -460,6 +494,7 @@ export function ServerProvider({ children }: { children: ReactNode }) {
       if (socketRef.current) {
         // Unmounting Component will Disconnect the Socket
         console.log("Unmounting: Disconnecting Socket");
+        socketRef.current.emit("deregister-user", user?._id);
         socketRef.current.disconnect();
         socketRef.current = null;
       }
@@ -498,6 +533,9 @@ export function ServerProvider({ children }: { children: ReactNode }) {
   }, [currentServer, currentServer?._id, getChannelList]);
 
   const value: ServerContextType = {
+    view,
+    friendsView,
+    setFriendsView,
     serverData,
     getServerList,
     currentServer,

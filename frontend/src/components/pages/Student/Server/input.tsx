@@ -1,25 +1,42 @@
 import { useServerContext } from "@/src/context/server.provider";
-import { ImageIcon, Laugh, Paperclip, Send, Sticker, X } from "lucide-react";
+import {
+  ImageIcon,
+  Laugh,
+  Paperclip,
+  Search,
+  Send,
+  Sticker,
+  X,
+} from "lucide-react";
 import { ChangeEvent, KeyboardEvent, useRef, useState } from "react";
 import {
   InputGroup,
+  InputGroupAddon,
   InputGroupButton,
   InputGroupInput,
   InputGroupTextarea,
 } from "@/src/ui/input-group";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/src/ui/tooltip";
 import { FileAttachmentViewer } from "../Josephine/input";
-import EmojiPicker, { Theme } from "emoji-picker-react";
+import EmojiPicker, { EmojiStyle, Theme } from "emoji-picker-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/ui/tabs";
 import { Grid } from "@giphy/react-components";
 import { GiphyFetch } from "@giphy/js-fetch-api";
 import { useTheme } from "next-themes";
+import { Button } from "@/src/ui/button";
 
 interface AttachedFile {
   file: File;
   preview?: string;
   id: string;
 }
+
+const detectDeviceType = (userAgent: string): EmojiStyle => {
+  // Check for Apple devices
+  const isApple = /iphone|ipad|ipod|macintosh|mac os x/i.test(userAgent);
+
+  return isApple ? ("apple" as EmojiStyle) : ("google" as EmojiStyle);
+};
 
 export default function ServerInput() {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -33,6 +50,7 @@ export default function ServerInput() {
   } = useServerContext();
 
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
+  const [mediaBoard, setMediaBoard] = useState(false);
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
@@ -77,7 +95,7 @@ export default function ServerInput() {
       await sendMessage();
     }
   };
-  
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const insertAtCursor = (text: string) => {
@@ -100,11 +118,11 @@ export default function ServerInput() {
   };
 
   const handleInsertEmoji = (emoji: string) => {
-    insertAtCursor(emoji);
+    changeMessage(messageInput + emoji);
   };
 
   const handleInsertGif = (gifUrl: string) => {
-    insertAtCursor(`\n[GIF: ${gifUrl}]\n`);
+    console.log(gifUrl);
   };
 
   const handleInsertSticker = (stickerUrl: string) => {
@@ -132,12 +150,14 @@ export default function ServerInput() {
           <span className="text-xs">{typingStatus}</span>
         </div>
       )}
-      <MediaKeyboard
-        onInsertEmoji={handleInsertEmoji}
-        onInsertGif={handleInsertGif}
-        onInsertSticker={handleInsertSticker}
-        onClose={() => {}}
-      />
+      {mediaBoard && (
+        <MediaKeyboard
+          onInsertEmoji={handleInsertEmoji}
+          onInsertGif={handleInsertGif}
+          onInsertSticker={handleInsertSticker}
+          onClose={() => setMediaBoard(false)}
+        />
+      )}
       <FileAttachmentViewer files={attachedFiles} onRemove={handleRemoveFile} />
       <InputGroup className="px-2">
         <Tooltip>
@@ -160,6 +180,19 @@ export default function ServerInput() {
           </TooltipTrigger>
           <TooltipContent>Attachments</TooltipContent>
         </Tooltip>
+        <Tooltip>
+          <TooltipTrigger className="ml-auto" asChild>
+            <InputGroupButton
+              variant="ghost"
+              size="icon-sm"
+              className="rounded-full"
+              onClick={() => setMediaBoard(!mediaBoard)}
+            >
+              <Sticker />
+            </InputGroupButton>
+          </TooltipTrigger>
+          <TooltipContent>GIF's, Stickers, Emojis</TooltipContent>
+        </Tooltip>
         <InputGroupTextarea
           placeholder="Enter your Message"
           value={messageInput}
@@ -167,18 +200,6 @@ export default function ServerInput() {
           onChange={(e) => changeMessage(e.target.value)}
           onKeyDown={handleText}
         />
-        <Tooltip>
-          <TooltipTrigger className="ml-auto" asChild>
-            <InputGroupButton
-              variant="ghost"
-              size="icon-sm"
-              className="rounded-full"
-            >
-              <Sticker />
-            </InputGroupButton>
-          </TooltipTrigger>
-          <TooltipContent>Stickers</TooltipContent>
-        </Tooltip>
         <Tooltip>
           <TooltipTrigger className="max-sm:ml-auto" asChild>
             <InputGroupButton
@@ -201,7 +222,7 @@ export default function ServerInput() {
 }
 
 // Initialize Giphy - Get your API key from developers.giphy.com
-const GIPHY_API_KEY = process.env.NEXT_PUBLIC_GIPHY_API_KEY || ""; 
+const GIPHY_API_KEY = process.env.NEXT_PUBLIC_GIPHY_API_KEY || "";
 
 const gf = new GiphyFetch(GIPHY_API_KEY);
 
@@ -213,6 +234,18 @@ const stickerPacks = [
   { id: 4, url: "https://example.com/sticker4.png", name: "Party" },
   { id: 5, url: "https://example.com/sticker5.png", name: "Cool" },
   { id: 6, url: "https://example.com/sticker6.png", name: "Angry" },
+  { id: 11, url: "https://example.com/sticker1.png", name: "Happy" },
+  { id: 22, url: "https://example.com/sticker2.png", name: "Love" },
+  { id: 33, url: "https://example.com/sticker3.png", name: "Sad" },
+  { id: 44, url: "https://example.com/sticker4.png", name: "Party" },
+  { id: 55, url: "https://example.com/sticker5.png", name: "Cool" },
+  { id: 66, url: "https://example.com/sticker6.png", name: "Angry" },
+  { id: 111, url: "https://example.com/sticker1.png", name: "Happy" },
+  { id: 222, url: "https://example.com/sticker2.png", name: "Love" },
+  { id: 333, url: "https://example.com/sticker3.png", name: "Sad" },
+  { id: 444, url: "https://example.com/sticker4.png", name: "Party" },
+  { id: 555, url: "https://example.com/sticker5.png", name: "Cool" },
+  { id: 666, url: "https://example.com/sticker6.png", name: "Angry" },
 ];
 
 interface MediaKeyboardProps {
@@ -250,47 +283,50 @@ function MediaKeyboard({
 
   return (
     <div className="absolute bottom-full max-w-md right-0 left-0 mb-2 bg-background border rounded-lg shadow-lg overflow-hidden">
-      <div className="flex items-center justify-between p-2 border-b">
-        <h3 className="text-sm font-medium">Media Picker</h3>
-        <button
-          onClick={onClose}
-          className="p-1 hover:bg-accent rounded-full transition-colors"
-        >
-          <X className="w-4 h-4" />
-        </button>
-      </div>
-
       <Tabs defaultValue="emoji" className="w-full">
-        <TabsList className="w-full grid grid-cols-3 rounded-none border-b">
-          <TabsTrigger value="emoji">😊 Emoji</TabsTrigger>
-          <TabsTrigger value="gifs">GIF</TabsTrigger>
-          <TabsTrigger value="stickers">🎨 Stickers</TabsTrigger>
-        </TabsList>
+        <div className="flex items-center justify-between p-2 border-b">
+          <TabsList className="bg-transparent grid grid-cols-3 rounded-none">
+            <TabsTrigger value="emoji">Emoji</TabsTrigger>
+            <TabsTrigger value="gifs">GIFs</TabsTrigger>
+            <TabsTrigger value="stickers">Stickers</TabsTrigger>
+          </TabsList>
+          <Button
+            onClick={onClose}
+            size="icon-sm"
+            variant="ghost"
+            className="rounded-full transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
 
-        <TabsContent value="emoji" className="m-0 p-2">
+        <TabsContent value="emoji" className="m-0 ">
           <div className="max-h-[350px] overflow-hidden">
             <EmojiPicker
               onEmojiClick={onEmojiClick}
               width="100%"
               height={350}
               theme={theme as Theme}
+              emojiStyle={detectDeviceType(navigator.userAgent)}
               searchPlaceHolder="Search emoji..."
               previewConfig={{ showPreview: false }}
-              
             />
           </div>
         </TabsContent>
 
         <TabsContent value="gifs" className="max-h-[350px] m-0 p-2">
           <div className="mb-2 ">
-            <input
-              type="text"
-              placeholder="Search GIFs..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-
-            />
+            <InputGroup>
+              <InputGroupAddon>
+                <Search />
+              </InputGroupAddon>
+              <InputGroupInput
+                type="text"
+                placeholder="Search GIFs..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </InputGroup>
           </div>
           <div className="h-[350px] overflow-y-auto custom-scrollbar">
             <Grid
@@ -303,8 +339,8 @@ function MediaKeyboard({
           </div>
         </TabsContent>
 
-        <TabsContent value="stickers" className="m-0 p-2">
-          <div className="grid grid-cols-4 gap-2 max-h-[350px] overflow-y-auto custom-scrollbar p-2">
+        <TabsContent value="stickers" className="max-h-[350px] m-0 p-2">
+          <div className="grid grid-cols-4 gap-2 h-[350px] overflow-y-auto custom-scrollbar p-2">
             {stickerPacks.map((sticker) => (
               <button
                 key={sticker.id}

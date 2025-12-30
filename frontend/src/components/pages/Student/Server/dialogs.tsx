@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { useServerContext } from "@/src/context/server.provider";
 import { useAppSelector } from "@/src/hooks/redux";
 import { User } from "@/src/types/auth.types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/src/ui/avatar";
@@ -20,7 +21,7 @@ import {
 import { Skeleton } from "@/src/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/src/ui/tooltip";
 import { BACKEND_URL } from "@/src/utils/config";
-import { Search, UserPlus, UsersRound } from "lucide-react";
+import { Search, UserPlus } from "lucide-react";
 import { ChangeEvent, useEffect, useState } from "react";
 
 export default function AddFriendDialog({
@@ -29,6 +30,7 @@ export default function AddFriendDialog({
   triggerClass?: string;
 }) {
   const { accessToken } = useAppSelector((state) => state.auth);
+  const { sendFriendRequest } = useServerContext();
 
   const [searchInput, setSearchInput] = useState("");
   const [searchResults, setSearchResults] = useState<User[]>([]);
@@ -39,25 +41,7 @@ export default function AddFriendDialog({
     setSearchInput(e.target.value);
   };
 
-  const sendFriendRequest = async (receiverId: string) => {
-    try {
-      const response = await fetch(
-        `${BACKEND_URL}/api/v1/inbox/friends/request`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ receiverId }),
-        }
-      );
-      const data = await response.json();
-      console.log(data);
-    } catch (error) {
-      console.error("Error in Code");
-    }
-  };
+  
 
   useEffect(() => {
     if (!searchInput.trim()) {

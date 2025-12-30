@@ -12,7 +12,7 @@ import {
   AttachmentTransferProcess,
   ChannelData,
   Friend,
-  FriendRequestStatus,
+  FriendRequests,
   FriendsState,
   MessageData,
   ServerContextType,
@@ -25,6 +25,7 @@ import { io, Socket } from "socket.io-client";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { addNotification } from "../store/slices/notification.slice";
 import { nanoid } from "@reduxjs/toolkit";
+import { EmojiClickData } from "emoji-picker-react";
 
 const ServerContext = createContext<ServerContextType | undefined>(undefined);
 
@@ -62,6 +63,7 @@ export function ServerProvider({ children }: { children: ReactNode }) {
   const { accessToken, user } = useAppSelector((state) => state.auth);
 
   const [view, setView] = useState<ViewMode>("friends");
+  const [messagesLoading, setMessagesLoading] = useState(false);
   const [friendsView, setFriendsView] = useState<FriendsState>("all");
   const [messageInput, setMessageInput] = useState<string>("");
   const [typingStatus, setTypingStatus] = useState<string>("");
@@ -81,12 +83,16 @@ export function ServerProvider({ children }: { children: ReactNode }) {
   );
   const [attachments, setAttachments] = useState<File[]>([]);
   const [friendsList, setFriendsList] = useState<Friend[]>([]);
-  const [friendRequests, setFriendRequests] = useState<FriendRequestStatus[]>(
-    []
-  );
+  const [currentDM, setCurrentDM] = useState<Friend | null>(null);
+  const [friendRequests, setFriendRequests] = useState<FriendRequests[]>([]);
+
+  console.log(channelData);
 
   const leftSidebar = leftSidebarState ?? !isMobile;
   const rightSidebar = rightSidebarState ?? !isMobile;
+
+  const checkMessageInTransit = (messageId: string): boolean =>
+    pendingMessagesRef.current.has(messageId);
 
   const changeMessage = (message: string) => {
     setMessageInput(message);
@@ -99,9 +105,6 @@ export function ServerProvider({ children }: { children: ReactNode }) {
       );
     }
   };
-
-  const checkMessageInTransit = (messageId: string): boolean =>
-    pendingMessagesRef.current.has(messageId);
 
   const updateAttachmentStatus = (
     messageId: string,
@@ -259,6 +262,7 @@ export function ServerProvider({ children }: { children: ReactNode }) {
         createdAt: new Date().toISOString(),
         timestamp: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        reactions: [],
         deletedAt: "",
         userId: user,
         attachments: newMessageAttachments,
@@ -344,48 +348,25 @@ export function ServerProvider({ children }: { children: ReactNode }) {
     messageInput,
     currentServer?._id,
     currentChannel?._id,
-    socketRef.current,
+
     user?._id,
     user,
   ]);
 
-  const getMessagesList = useCallback(
-    (channelId: string) => {
-      // Receive Messages List of the Current Channel
-      fetch(
-        `${BACKEND_URL}/api/v1/server/message/list?channelId=${channelId}`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        }
-      )
-        .then((response) => response.json())
-        .then((data) => setMessagesData(data.messages)); // Save the Message Data
-    },
-    [accessToken]
-  );
-
-  const getChannelList = useCallback(
-    (serverId: string) => {
-      // Receive Channels List of the Current Server
-      fetch(`${BACKEND_URL}/api/v1/server/channel/list?serverId=${serverId}`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          setChannelData(data.channels); // Save Channel List
-          if (data.channels[0]) {
-            setCurrentChannel(data.channels[0]); // Save Current Channel ( triggers UseEffect )
-          }
-        });
-    },
-    [accessToken]
-  );
+  const toggleReactions = async (
+    messageId: string,
+    emojiObject: EmojiClickData
+  ) => {
+    if (socketRef.current) {
+      socketRef.current.emit(
+        "toggle-reaction",
+        currentChannel?._id,
+        messageId,
+        user?._id,
+        emojiObject.emoji
+      );
+    }
+  };
 
   const changeServers = useCallback((server: ServerData) => {
     // Change Servers Logic
@@ -396,21 +377,6 @@ export function ServerProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const getServerList = useCallback(() => {
-    // Receive Server List of the User
-    fetch(`${BACKEND_URL}/api/v1/server/list`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        setServerData(data.servers); // Save Server List
-        if (data.servers[0]) changeServers(data.servers[0]); // Change Current Server ( triggers UseEffect )
-      });
-  }, [accessToken, changeServers]);
-
   const changeChannels = useCallback((channel: ChannelData) => {
     // Change Channels Logic
     setCurrentChannel((prev) => {
@@ -420,7 +386,108 @@ export function ServerProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const getFriendsList = async () => {
+  const getMessagesList = useCallback(
+    async (channelId: string) => {
+      try {
+        setMessagesData([]);
+        // Receive Messages List of the Current Channel
+        const response = await fetch(
+          `${BACKEND_URL}/api/v1/server/message/list?channelId=${channelId}`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        );
+        const data = await response.json();
+        if (data.type !== "success") throw new Error(data.message);
+
+        setMessagesData(data.messages);
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Error in Retrieving Messages, Try Again Later";
+        dispatch(
+          addNotification({
+            type: "error",
+            title: "Error in Retrieving Message",
+            description: message,
+          })
+        );
+      }
+    },
+    [accessToken, dispatch]
+  );
+
+  const getChannelList = useCallback(
+    async (serverId: string) => {
+      // Receive Channels List of the Current Server
+      try {
+        const response = await fetch(
+          `${BACKEND_URL}/api/v1/server/channel/list?serverId=${serverId}`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        );
+        const data = await response.json();
+
+        setChannelData(data.channels); // Save Channel List
+        if (data.channels[0]) {
+          setCurrentChannel(data.channels[0]); // Save Current Channel ( triggers UseEffect )
+        }
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Error in Retrieving Messages, Try Again Later";
+        dispatch(
+          addNotification({
+            type: "error",
+            title: "Error in Retrieving Message",
+            description: message,
+          })
+        );
+      }
+    },
+    [accessToken, dispatch]
+  );
+
+  const getServerList = useCallback(async () => {
+    // Receive Server List of the User
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/v1/server/list`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      const data = await response.json();
+
+      setServerData(data.servers); // Save Server List
+      if (data.servers[0] && isIntialMount.current)
+        changeServers(data.servers[0]); // Change Current Server ( triggers UseEffect )
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Error in Retrieving Messages, Try Again Later";
+      dispatch(
+        addNotification({
+          type: "error",
+          title: "Error in Retrieving Message",
+          description: message,
+        })
+      );
+    }
+  }, [accessToken, changeServers, dispatch]);
+
+  const getFriendsList = useCallback(async () => {
     try {
       const response = await fetch(`${BACKEND_URL}/api/v1/inbox/friends`, {
         method: "GET",
@@ -437,7 +504,6 @@ export function ServerProvider({ children }: { children: ReactNode }) {
 
       setFriendsList(data.friends);
       setFriendRequests(data.requests);
-
     } catch (error) {
       const message =
         error instanceof Error
@@ -451,6 +517,176 @@ export function ServerProvider({ children }: { children: ReactNode }) {
         })
       );
     }
+  }, [dispatch, accessToken]);
+
+  const sendFriendRequest = async (receiverId: string) => {
+    try {
+      const response = await fetch(
+        `${BACKEND_URL}/api/v1/inbox/friends/request`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ receiverId }),
+        }
+      );
+      const data = await response.json();
+
+      if (data.type !== "success") {
+        throw new Error(data.message);
+      }
+
+      console.log(data);
+
+      setFriendRequests((prev) => [...prev, data.outgoingRequest]);
+    } catch (error) {
+      console.error("Error in Sending Friend Request");
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Error in Sending friend request, Try Again Later";
+      dispatch(
+        addNotification({
+          type: "error",
+          title: "Error in Sending Friend Request",
+          description: message,
+        })
+      );
+    }
+  };
+
+  const acceptFriendRequest = async (userId: string) => {
+    try {
+      const response = await fetch(
+        `${BACKEND_URL}/api/v1/inbox/friends/request/accept`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ userId }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.type !== "success") {
+        throw new Error(data.message);
+      }
+
+      setFriendsList((prev) => [...prev, data.newFriend]);
+      setFriendRequests((prev) =>
+        prev.filter((request) => request.user._id !== userId)
+      );
+
+      dispatch(
+        addNotification({
+          type: "info",
+          title: `${data.newFriend.user.name} is your new friend`,
+          description: "You have a new friend",
+        })
+      );
+    } catch (error) {
+      console.error("Error in Accepting Friend Request");
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Error in Accepting Friend Request, Try Again Later";
+      dispatch(
+        addNotification({
+          type: "error",
+          title: "Error in Accepting Friend Request",
+          description: message,
+        })
+      );
+    }
+  };
+
+  const rejectFriendRequest = async (userId: string) => {
+    try {
+      const response = await fetch(
+        `${BACKEND_URL}/api/v1/inbox/friends/request/reject`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ userId }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.type !== "success") {
+        throw new Error(data.message);
+      }
+
+      setFriendRequests((prev) =>
+        prev.filter((request) => request.user._id !== userId)
+      );
+    } catch (error) {
+      console.error("Error in Rejecting Friend Request");
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Error in Rejecting Friend Request, Try Again Later";
+      dispatch(
+        addNotification({
+          type: "error",
+          title: "Error in Rejecting Friend Request",
+          description: message,
+        })
+      );
+    }
+  };
+
+  const cancelFriendRequest = async (userId: string) => {
+    try {
+      const response = await fetch(
+        `${BACKEND_URL}/api/v1/inbox/friends/request/cancel`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ userId }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.type !== "success") {
+        throw new Error(data.message);
+      }
+
+      setFriendRequests((prev) =>
+        prev.filter((request) => request.user._id !== userId)
+      );
+    } catch (error) {
+      console.error("Error in Cancelling Friend Request");
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Error in Cancelling Friend Request, Try Again Later";
+      dispatch(
+        addNotification({
+          type: "error",
+          title: "Error in Cancelling Friend Request",
+          description: message,
+        })
+      );
+    }
+  };
+
+  const changeDM = (dm: Friend) => {
+    setView("inbox");
+    setCurrentDM(dm);
+    setCurrentChannel(dm.channel);
   };
 
   useEffect(() => {
@@ -471,14 +707,45 @@ export function ServerProvider({ children }: { children: ReactNode }) {
 
     socket.emit("register-user", user?._id);
 
-    socket.on("friend-request-received", (sender, createdAt) => {
-      console.log(sender);
-      console.log(createdAt);
+    socket.on("friend-request-received", (incomingRequest: FriendRequests) => {
+      setFriendRequests((prev) => [...prev, incomingRequest]);
+      dispatch(
+        addNotification({
+          type: "info",
+          title: `${incomingRequest.user.name} sent you a friend request`,
+          description: "You received a friend request!!!",
+        })
+      );
+    });
+
+    socket.on("request-accepted", (newFriend: Friend) => {
+      setFriendsList((prev) => [...prev, newFriend]);
+      setFriendRequests((prev) =>
+        prev.filter((request) => request.user._id !== newFriend.user._id)
+      );
+      dispatch(
+        addNotification({
+          type: "info",
+          title: `${newFriend.user.name} accepted your request`,
+          description: "You have a new friend",
+        })
+      );
+    });
+
+    socket.on("request-rejected", (userId: string) => {
+      setFriendRequests((prev) =>
+        prev.filter((request) => request.user._id !== userId)
+      );
+    });
+
+    socket.on("request-cancelled", (userId: string) => {
+      setFriendRequests((prev) =>
+        prev.filter((request) => request.user._id !== userId)
+      );
     });
 
     socket.on("receive-message", (newMessage, tempMsgId) => {
       // Receive Message from Channel Room
-
       if (
         pendingMessagesRef.current.has(tempMsgId) &&
         !pendingMessagesRef.current.get(tempMsgId)
@@ -523,9 +790,9 @@ export function ServerProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (isIntialMount.current) {
       // Intial Mount
+      getServerList();
       isIntialMount.current = false;
       getFriendsList();
-      getServerList();
     }
   }, [getServerList, getFriendsList]);
 
@@ -554,6 +821,7 @@ export function ServerProvider({ children }: { children: ReactNode }) {
 
   const value: ServerContextType = {
     view,
+    setView,
     friendsView,
     setFriendsView,
     serverData,
@@ -574,6 +842,15 @@ export function ServerProvider({ children }: { children: ReactNode }) {
     setAttachments,
     typingStatus,
     checkMessageInTransit,
+    friendsList,
+    friendRequests,
+    sendFriendRequest,
+    acceptFriendRequest,
+    rejectFriendRequest,
+    cancelFriendRequest,
+    currentDM,
+    changeDM,
+    toggleReactions
   };
 
   return (

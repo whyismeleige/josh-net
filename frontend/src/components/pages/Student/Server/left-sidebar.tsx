@@ -16,7 +16,12 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/src/ui/avatar";
 import { Button } from "@/src/ui/button";
 import { useServerContext } from "@/src/context/server.provider";
-import { ChannelData, ChannelType } from "@/src/types/server.types";
+import {
+  ChannelData,
+  ChannelType,
+  Friend,
+  ViewMode,
+} from "@/src/types/server.types";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/src/ui/tooltip";
 import {
   Accordion,
@@ -83,6 +88,7 @@ const dummyDMs = Array(100).fill({
 export default function ServerSidebar() {
   const {
     view,
+    setView,
     serverData,
     currentServer,
     channelData,
@@ -91,6 +97,8 @@ export default function ServerSidebar() {
     currentChannel,
     leftSidebar,
     setLeftSidebar,
+    friendsList,
+    changeDM,
   } = useServerContext();
 
   const { user } = useAppSelector((state) => state.auth);
@@ -119,7 +127,7 @@ export default function ServerSidebar() {
             {/* Header */}
             <div className="h-14 flex items-center justify-center border-b">
               <Tooltip>
-                <TooltipTrigger asChild>
+                <TooltipTrigger onClick={() => setView("friends")} asChild>
                   <div className="bg-sidebar-primary cursor-pointer text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
                     <Inbox className="size-4" />
                   </div>
@@ -130,11 +138,12 @@ export default function ServerSidebar() {
 
             {/* Navigation Items */}
             <div className="flex flex-col overflow-y-auto custom-scrollbar items-center gap-2 flex-1 p-2 space-y-1 ">
-              {serverData.map((server, index) => (
+              {serverData.map((server) => (
                 <Tooltip key={server._id}>
                   <TooltipTrigger asChild>
                     <Avatar
                       onClick={() => {
+                        setView("servers");
                         changeServers(server);
                       }}
                       className={`w-full h-10 flex items-center cursor-pointer justify-center transition-colors ${
@@ -177,11 +186,15 @@ export default function ServerSidebar() {
               <div className="flex items-center justify-between">
                 {view === "inbox" || view === "friends" ? (
                   <div className="flex flex-col gap-2 items-start">
-                    <Button variant="outline" className="flex-1">
+                    <Button
+                      variant="outline"
+                      onClick={() => setView("friends")}
+                      className="flex-1"
+                    >
                       <UsersRound />
                       Friends
                     </Button>
-                    <AddFriendDialog triggerClass="hidden md:flex"/>
+                    <AddFriendDialog triggerClass="hidden md:flex" />
                   </div>
                 ) : (
                   <h2 className="text-base font-medium text-foreground">
@@ -200,7 +213,10 @@ export default function ServerSidebar() {
             </div>
 
             {view === "inbox" || view === "friends" ? (
-              <DirectMessageList />
+              <DirectMessageList
+                friendsList={friendsList}
+                setCurrentDM={changeDM}
+              />
             ) : (
               <ChannelList
                 channelData={channelData}
@@ -218,15 +234,30 @@ export default function ServerSidebar() {
               <span className="truncate font-medium">{user?.name}</span>
               <span className="truncate text-xs">Do not Disturb</span>
             </div>
-            <Button variant="ghost" size="icon-sm">
-              <Mic />
-            </Button>
-            <Button variant="ghost" size="icon-sm">
-              <Headphones />
-            </Button>
-            <Button variant="ghost" size="icon-sm">
-              <Settings />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon-sm">
+                  <Mic />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Voice Channels Coming Soon</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon-sm">
+                  <Headphones />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Video Channels Coming Soon</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon-sm">
+                  <Settings />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Settings</TooltipContent>
+            </Tooltip>
           </div>
         </div>
       </div>
@@ -234,16 +265,23 @@ export default function ServerSidebar() {
   );
 }
 
-export function DirectMessageList() {
+export function DirectMessageList({
+  friendsList,
+  setCurrentDM,
+}: {
+  friendsList: Friend[];
+  setCurrentDM: (dm: Friend) => void;
+}) {
   return (
     <div className="w-full overflow-y-auto custom-scrollbar">
       <span className="mx-4 text-muted-foreground hover:no-underline hover:text-foreground">
         Direct Messages
       </span>
-      {dummyDMs.map((dm, index) => (
+      {friendsList.map((dm, index) => (
         <div
           key={index}
           className="flex items-center gap-2 px-2 py-1.5 mx-2 rounded text-sm cursor-pointer transition-colors text-muted-foreground hover:bg-sidebar-accent/50 hover:text-foreground group"
+          onClick={() => setCurrentDM(dm)}
         >
           <Avatar className="rounded-lg">
             <AvatarImage src={dm.user.avatarURL} alt={dm.user.name} />

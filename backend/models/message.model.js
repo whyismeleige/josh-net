@@ -37,6 +37,30 @@ const MessageSchema = new mongoose.Schema(
         mimeType: String,
       },
     ],
+    reactions: [
+      {
+        emoji: {
+          type: String,
+          required: true,
+        },
+        users: [
+          {
+            userId: {
+              type: mongoose.Schema.Types.ObjectId,
+              ref: "User",
+            },
+            time: {
+              type: Date,
+              default: Date.now,
+            },
+          },
+        ],
+        count: {
+          type: Number,
+          default: 1,
+        },
+      },
+    ],
     content: {
       type: String,
       trim: true,
@@ -78,6 +102,35 @@ const MessageSchema = new mongoose.Schema(
     },
   }
 );
+
+MessageSchema.methods.toggleReactions = async function (emoji, userId) {
+  const existingReaction = this.reactions.find(
+    (reaction) => reaction.emoji === emoji
+  );
+  let count;
+  if (!existingReaction) {
+    this.reactions.push({
+      emoji,
+      users: [{ user: userId }],
+      count: 1,
+    });
+    count = 1;
+  } else {
+    const existingUser = existingReaction.users.find(
+      (doc) => doc.user.toString() === userId.toString()
+    );
+    if (existingUser) {
+      existingReaction.users.pull({ user: userId });
+      existingReaction.count--;
+    } else {
+      existingReaction.users.push({ user: userId });
+      existingReaction.count++;
+    }
+    count = existingReaction.count;
+  }
+  await this.save();
+  return count;
+};
 
 MessageSchema.methods.saveAttachments = async function (attachments) {
   this.attachments = attachments;

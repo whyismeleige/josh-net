@@ -33,6 +33,7 @@ export default function ServerHeader() {
     rightSidebar,
     setRightSidebar,
     setFriendsView,
+    currentDM,
   } = useServerContext();
 
   const [isSearch, setIsSearch] = useState(false);
@@ -84,6 +85,7 @@ export default function ServerHeader() {
       : view === "friends"
       ? []
       : serverButtonsData;
+
   return (
     <header className="flex shrink-0 items-center justify-between border-b gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
       {!isSearch ? (
@@ -115,22 +117,22 @@ export default function ServerHeader() {
                     <TabsTrigger value="pending">Pending</TabsTrigger>
                   </TabsList>
                 </Tabs>
-                <AddFriendDialog/>
+                <AddFriendDialog />
               </div>
             )}
-            {view === "inbox" && (
+            {view === "inbox" && currentDM && (
               <div className="flex items-center gap-2 mx-2 rounded text-sm cursor-pointer transition-colors text-muted-foreground hover:text-foreground group">
                 <Avatar className="rounded-lg">
                   <AvatarImage
-                    src={
-                      "https://img.icons8.com/?size=48&id=kDoeg22e5jUY&format=png"
-                    }
-                    alt="Rajesh Kumar"
+                    src={currentDM.user.avatarURL}
+                    alt={currentDM.user.name}
                   />
                   <AvatarFallback className="rounded-lg">CN</AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">Rajesh Kumar</span>
+                  <span className="truncate font-medium">
+                    {currentDM.user.name}
+                  </span>
                 </div>
               </div>
             )}

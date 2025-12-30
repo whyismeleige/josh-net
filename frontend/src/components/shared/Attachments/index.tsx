@@ -169,37 +169,37 @@ const downloadFile = async (
   fileName: string,
   accessToken: string | null
 ) => {
-  try {
-    if (!accessToken) return;
-    console.log("Filename", fileName);
-    const response = await fetch(
-      `${BACKEND_URL}/api/v1/server/media/download?key=${key}`,
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }
-    );
+  // try {
+  //   if (!accessToken) return;
+  //   console.log("Filename", fileName);
+  //   const response = await fetch(
+  //     `${BACKEND_URL}/api/v1/server/media/download?key=${key}`,
+  //     {
+  //       headers: {
+  //         Authorization: `Bearer ${accessToken}`,
+  //       },
+  //     }
+  //   );
 
-    if (!response.ok) {
-      throw new Error("Failed to download file");
-    }
+  //   if (!response.ok) {
+  //     throw new Error("Failed to download file");
+  //   }
 
-    const blob = await response.blob();
-    const url = URL.createObjectURL(blob);
+  //   const blob = await response.blob();
+  //   const url = URL.createObjectURL(blob);
 
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = fileName;
-    if(!link) return;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  //   const link = document.createElement("a");
+  //   link.href = url;
+  //   link.download = fileName;
+  //   if(!link) return;
+  //   document.body.appendChild(link);
+  //   link.click();
+  //   document.body.removeChild(link);
 
-    URL.revokeObjectURL(url);
-  } catch (error) {
-    console.error("Download failed:", error);
-  }
+  //   URL.revokeObjectURL(url);
+  // } catch (error) {
+  //   console.error("Download failed:", error);
+  // }
 };
 // --- Sub-Component: File Card (PDFs, Docs, Zips) ---
 const FileAttachmentCard = ({ file }: { file: Attachment }) => {
@@ -496,9 +496,10 @@ const VideoAttachmentGrid = ({ videos }: { videos: Attachment[] }) => {
 // --- Main Component ---
 interface MessageAttachmentsProps {
   attachments: Attachment[];
+  className?: string;
 }
 
-export function MessageAttachments({ attachments }: MessageAttachmentsProps) {
+export function MessageAttachments({ attachments, className }: MessageAttachmentsProps) {
   if (!attachments || attachments.length === 0) return null;
 
   // Separate Images from Files
@@ -515,7 +516,7 @@ export function MessageAttachments({ attachments }: MessageAttachmentsProps) {
   );
 
   return (
-    <div className="mt-2 space-y-2">
+    <div className={cn("mt-2 space-y-2", className)}>
       {/* 1. Render Images Grid */}
       <ImageAttachmentGrid images={images} />
       <VideoAttachmentGrid videos={videos} />

@@ -4,13 +4,15 @@ const ChannelSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: [true, "Please provide a Channel Schema"],
       trim: true,
       minlength: [3, "Name of the Channel needs to be atleast 3 characters"],
       maxlength: [
         50,
         "Name of the Channel cannot exceed more than 50 characters",
       ],
+      required: function () {
+        return !["dm", "group_dm"].includes(this.type);
+      },
     },
     description: {
       type: String,
@@ -26,6 +28,15 @@ const ChannelSchema = new mongoose.Schema(
       enum: ["dm", "group_dm", "guild_announcement", "guild_text"],
       default: "guild_text",
     },
+    participants: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: function () {
+          return ["dm", "group_dm"].includes(this.type);
+        },
+      },
+    ],
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -36,6 +47,10 @@ const ChannelSchema = new mongoose.Schema(
         ref: "Message",
       },
     ],
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
   },
   {
     timestamps: true,
@@ -54,6 +69,14 @@ const ChannelSchema = new mongoose.Schema(
   }
 );
 
+ChannelSchema.statics.createNewDM = async function (participants) {
+  return await this.create({
+    type: "dm",
+    createdBy: participants[0],
+    participants,
+  });
+};
+
 ChannelSchema.statics.createNewChannel = async function (data, userId) {
   return await this.create({
     name: data.name,
@@ -62,7 +85,5 @@ ChannelSchema.statics.createNewChannel = async function (data, userId) {
     createdBy: userId,
   });
 };
-
-
 
 module.exports = mongoose.model("Channel", ChannelSchema);

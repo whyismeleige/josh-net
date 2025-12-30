@@ -61,7 +61,6 @@ module.exports = (io, socket) => {
 
         socket.emit(`upload-error:${tempMsgId}`, error);
       } finally {
-
         socket.emit(`all-uploads-complete:${tempMsgId}`);
       }
 
@@ -82,6 +81,24 @@ module.exports = (io, socket) => {
       io.to(channelId).emit("receive-message", newMessage, tempMsgId);
     }
   );
+
+  socket.on("toggle-reaction", async (channelId, messageId, userId, emoji) => {
+    console.log("Emojis are being added", emoji);
+    // const message = await Message.findById(messageId);
+
+    // const newCount = await message.toggleReaction(emoji, userId);
+
+    // socket
+    //   .to(channelId)
+    //   .emit(
+    //     "reaction_updated",
+    //     messageId,
+    //     userId,
+    //     emoji,
+    //     newCount,
+    //     (timestamp = new Date().toISOString())
+    //   );
+  });
 };
 
 const createDirIfNotExistsRecursive = (directory) => {

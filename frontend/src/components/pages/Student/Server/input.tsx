@@ -24,6 +24,7 @@ import { Grid } from "@giphy/react-components";
 import { GiphyFetch } from "@giphy/js-fetch-api";
 import { useTheme } from "next-themes";
 import { Button } from "@/src/ui/button";
+import EmojiMenu from "@/src/components/shared/Emoji-Picker";
 
 interface AttachedFile {
   file: File;
@@ -302,15 +303,7 @@ function MediaKeyboard({
 
         <TabsContent value="emoji" className="m-0 ">
           <div className="max-h-[350px] overflow-hidden">
-            <EmojiPicker
-              onEmojiClick={onEmojiClick}
-              width="100%"
-              height={350}
-              theme={theme as Theme}
-              emojiStyle={detectDeviceType(navigator.userAgent)}
-              searchPlaceHolder="Search emoji..."
-              previewConfig={{ showPreview: false }}
-            />
+            <EmojiMenu onEmojiClick={onEmojiClick}/>
           </div>
         </TabsContent>
 

@@ -281,15 +281,34 @@ UserSchema.methods.changePassword = async function (newPassword) {
   await this.save();
 };
 
+UserSchema.methods.checkIfAlreadyFriends = function (receiverId) {
+  return this.friends.find(
+    (friend) => friend.user.toString() === receiverId.toString()
+  );
+};
+
 UserSchema.methods.requestExists = function (receiverId) {
   return this.requests.find(
     (request) => request.user.toString() === receiverId.toString()
   );
 };
 
+UserSchema.methods.addFriend = async function (newFriendId, newDMChannelId) {
+  this.requests.pull({ user: newFriendId });
+  this.friends.push({ user: newFriendId, channel: newDMChannelId });
+  await this.save();
+  return this.friends[this.friends.length - 1].toJSON();
+};
+
+UserSchema.methods.rejectRequest = async function (newFriendId) {
+  this.requests.pull({ user: newFriendId });
+  await this.save();
+};
+
 UserSchema.methods.requestProcess = async function (userId, status) {
   this.requests.push({ user: userId, status });
   await this.save();
+  return this.requests[this.requests.length - 1].toJSON();
 };
 
 UserSchema.methods.isUserBlocked = function (senderId) {

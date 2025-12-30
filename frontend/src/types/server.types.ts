@@ -1,3 +1,4 @@
+import { EmojiClickData } from "emoji-picker-react";
 import { User } from "./auth.types";
 
 export type ViewMode = "inbox" | "servers" | "friends";
@@ -26,10 +27,16 @@ export type MessageType = "text" | "image" | "file" | "embed";
 
 export type AttachmentTransferProcess = "download" | "upload";
 
+export interface Reaction {
+  emoji: string;
+  users: [{ userId: string; time: string }];
+  count: number;
+}
+
 export interface Friend {
   _id: string;
   user: User;
-  channel: string;
+  channel: ChannelData;
   since: string;
 }
 
@@ -85,6 +92,7 @@ export interface MessageData {
   createdAt: string;
   deleted: string;
   attachments: Attachment[];
+  reactions: Reaction[];
   deletedAt?: string | null;
   editedTimestamp?: string | null;
   timestamp: string;
@@ -95,6 +103,7 @@ export interface MessageData {
 
 export interface ServerContextType {
   view: ViewMode;
+  setView: (view: ViewMode) => void;
   friendsView: FriendsState;
   setFriendsView: (view: FriendsState) => void;
   serverData: ServerData[];
@@ -115,4 +124,13 @@ export interface ServerContextType {
   setAttachments: (files: File[]) => void;
   typingStatus: string;
   checkMessageInTransit: (messageId: string) => boolean;
+  friendsList: Friend[];
+  friendRequests: FriendRequests[];
+  sendFriendRequest: (receiverId: string) => Promise<void>;
+  acceptFriendRequest: (userId: string) => Promise<void>;
+  rejectFriendRequest: (userId: string) => Promise<void>;
+  cancelFriendRequest: (userId: string) => Promise<void>;
+  currentDM: Friend | null;
+  changeDM: (dm: Friend) => void;
+  toggleReactions: (messageId: string, emojiObject: EmojiClickData) => void;
 }

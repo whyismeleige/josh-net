@@ -4,12 +4,14 @@ import RightSidebar from "./right-sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/src/ui/avatar";
 import { useAppSelector } from "@/src/hooks/redux";
 import { usePageTitle } from "@/src/hooks/usePageTitle";
-import { Fragment, useEffect, useRef, useState } from "react";
+import React, { Fragment, useEffect, useRef, useState } from "react";
 import { MessageAttachments } from "@/src/components/shared/Attachments";
 import ServerInput from "./input";
-import { MessageData } from "@/src/types/server.types";
+import { MessageData, Reaction } from "@/src/types/server.types";
 import { useDynamicMetadata } from "@/src/hooks/useDynamicMetadata";
 import { Separator } from "@/src/ui/separator";
+import EmojiMenu from "@/src/components/shared/Emoji-Picker";
+import { User } from "@/src/types/auth.types";
 import {
   Angry,
   ArrowLeftIcon,
@@ -38,6 +40,17 @@ import {
   InputGroupInput,
 } from "@/src/ui/input-group";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/src/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/src/ui/dropdown-menu";
+import { useStudentContext } from "@/src/context/material.provider";
+import { EmojiClickData } from "emoji-picker-react";
 
 const friends = Array(100).fill({
   user: {
@@ -45,6 +58,12 @@ const friends = Array(100).fill({
     avatarURL: `https://img.icons8.com/?size=48&id=kDoeg22e5jUY&format=png`,
   },
   channelID: "Random Channel",
+});
+
+const reactions: Reaction[] = Array(20).fill({
+  emoji: "😀",
+  users: [],
+  count: 100,
 });
 
 const getInitials = (name: string) => {
@@ -139,20 +158,41 @@ export default function StudentServer() {
   const endOfChatRef = useRef<HTMLDivElement>(null);
 
   const { user } = useAppSelector((state) => state.auth);
-  const { messages, currentServer, checkMessageInTransit, view, friendsView } =
-    useServerContext();
+  const {
+    messages,
+    currentServer,
+    checkMessageInTransit,
+    view,
+    friendsView,
+    friendRequests,
+    friendsList,
+    acceptFriendRequest,
+    rejectFriendRequest,
+    cancelFriendRequest,
+    changeDM,
+  } = useServerContext();
 
   useEffect(() => {
     endOfChatRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  usePageTitle(currentServer?.name || "Student Server");
+  const pageTitle =
+    view !== "servers" ? "Inbox" : currentServer?.name || "Student Server";
+  usePageTitle(pageTitle);
 
-  useDynamicMetadata({
-    title: currentServer?.name || "JOSH Net",
-    favicon: currentServer?.icon,
-    description: currentServer?.description || "Description",
-  });
+  // useDynamicMetadata({
+  //   title: view !== "servers" ? "Inbox" : currentServer?.name || "JOSH Net",
+  //   favicon: currentServer?.icon,
+  //   description: currentServer?.description || "Description",
+  // });
+
+  const requestsReceived = friendRequests.filter(
+    (request) => request.status === "incoming"
+  );
+  const requestsSent = friendRequests.filter(
+    (request) => request.status === "outgoing"
+  );
+
   return (
     <div className="flex flex-1 w-full max-w-full h-full min-h-0">
       {view === "friends" ? (
@@ -164,34 +204,44 @@ export default function StudentServer() {
             <InputGroupInput placeholder="Search" />
           </InputGroup>
           <span className="text-sm m-4">
-            {friendsView === "all" && "All friends"}
-            {friendsView === "pending" && "Sent"}
-            {friendsView === "requests" && "Requests Received"} -
+            {friendsView === "all" && `All friends - ${friendsList.length}`}
+            {friendsView === "pending" && `Sent - ${requestsSent.length}`}
+            {friendsView === "requests" &&
+              `Requests Received - ${requestsReceived.length}`}
           </span>
           <Separator />
           <div className="flex-1 overflow-y-auto p-1 custom-scrollbar">
             {friendsView === "all" &&
-              friends.map((friend, index) => (
+              friendsList.map((friend, index) => (
                 <div
                   key={index}
                   className="flex group/friend items-center gap-2 px-2 py-1.5 rounded text-sm transition-colors text-muted-foreground hover:bg-sidebar-accent/50 hover:text-foreground group"
                 >
-                  <Avatar className="rounded-lg">
-                    <AvatarImage
-                      src={friend.user.avatarURL}
-                      alt={friend.user.name}
-                    />
-                    <AvatarFallback className="rounded-lg">CN</AvatarFallback>
-                  </Avatar>
-                  <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-medium">
-                      {friend.user.name}
-                    </span>
+                  <div
+                    className="flex-1 flex items-center gap-2 cursor-pointer"
+                    onClick={() => changeDM(friend)}
+                  >
+                    <Avatar className="rounded-lg">
+                      <AvatarImage
+                        src={friend.user.avatarURL}
+                        alt={friend.user.name}
+                      />
+                      <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                    </Avatar>
+                    <div className="grid flex-1 text-left text-sm leading-tight">
+                      <span className="truncate font-medium">
+                        {friend.user.name}
+                      </span>
+                    </div>
                   </div>
                   <div className="opacity-100 md:opacity-0 group-hover/friend:opacity-100">
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon-sm">
+                        <Button
+                          variant="ghost"
+                          onClick={() => changeDM(friend)}
+                          size="icon-sm"
+                        >
                           <MessageCircle />
                         </Button>
                       </TooltipTrigger>
@@ -211,27 +261,31 @@ export default function StudentServer() {
                 </div>
               ))}
             {friendsView === "requests" &&
-              friends.map((friend, index) => (
+              requestsReceived.map((request, index) => (
                 <div
                   key={index}
                   className="flex group/friend items-center gap-2 px-2 py-1.5 rounded text-sm transition-colors text-muted-foreground hover:bg-sidebar-accent/50 hover:text-foreground group"
                 >
                   <Avatar className="rounded-lg">
                     <AvatarImage
-                      src={friend.user.avatarURL}
-                      alt={friend.user.name}
+                      src={request.user.avatarURL}
+                      alt={request.user.name}
                     />
                     <AvatarFallback className="rounded-lg">CN</AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
                     <span className="truncate font-medium">
-                      {friend.user.name}
+                      {request.user.name}
                     </span>
                   </div>
                   <div className="opacity-100 md:opacity-0 group-hover/friend:opacity-100">
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon-sm">
+                        <Button
+                          variant="ghost"
+                          onClick={() => acceptFriendRequest(request.user._id)}
+                          size="icon-sm"
+                        >
                           <Check />
                         </Button>
                       </TooltipTrigger>
@@ -239,7 +293,11 @@ export default function StudentServer() {
                     </Tooltip>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon-sm">
+                        <Button
+                          variant="ghost"
+                          onClick={() => rejectFriendRequest(request.user._id)}
+                          size="icon-sm"
+                        >
                           <X />
                         </Button>
                       </TooltipTrigger>
@@ -249,27 +307,31 @@ export default function StudentServer() {
                 </div>
               ))}
             {friendsView === "pending" &&
-              friends.map((friend, index) => (
+              requestsSent.map((request, index) => (
                 <div
                   key={index}
                   className="flex group/friend items-center gap-2 px-2 py-1.5 rounded text-sm transition-colors text-muted-foreground hover:bg-sidebar-accent/50 hover:text-foreground group"
                 >
                   <Avatar className="rounded-lg">
                     <AvatarImage
-                      src={friend.user.avatarURL}
-                      alt={friend.user.name}
+                      src={request.user.avatarURL}
+                      alt={request.user.name}
                     />
                     <AvatarFallback className="rounded-lg">CN</AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
                     <span className="truncate font-medium">
-                      {friend.user.name}
+                      {request.user.name}
                     </span>
                   </div>
                   <div className="opacity-100 md:opacity-0 group-hover/friend:opacity-100">
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon-sm">
+                        <Button
+                          variant="ghost"
+                          onClick={() => cancelFriendRequest(request.user._id)}
+                          size="icon-sm"
+                        >
                           <X />
                         </Button>
                       </TooltipTrigger>
@@ -298,55 +360,7 @@ export default function StudentServer() {
                       <div className="flex-grow border-t border-gray-300"></div>
                     </div>
                   )}
-                <div
-                  className={`flex relative group ${
-                    message.userId._id === user?._id && "flex-row-reverse"
-                  } gap-3 p-3 rounded-lg transition-colors`}
-                >
-                  <ActionBar
-                    className={
-                      message.userId._id === user?._id ? "left-0" : "right-0"
-                    }
-                  />
-                  <Avatar className="h-10 w-10 rounded-full flex-shrink-0">
-                    <AvatarImage
-                      src={message.userId.avatarURL}
-                      alt={message.userId.name}
-                    />
-                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-sm font-medium">
-                      {getInitials(message.userId.name)}
-                    </AvatarFallback>
-                  </Avatar>
-
-                  <div className="min-w-0">
-                    <div
-                      className={`flex ${
-                        message.userId._id === user?._id && "flex-row-reverse"
-                      } items-baseline gap-2 mb-1`}
-                    >
-                      <span className="font-semibold text-sm">
-                        {message.userId._id === user?._id
-                          ? "Me"
-                          : message.userId.name}
-                      </span>
-                      <span className="text-xs text-gray-500">
-                        {formatMessageTimestamp(message.timestamp)}
-                      </span>
-                      {message.editedTimestamp && (
-                        <span className="text-xs text-gray-400 italic">
-                          (edited)
-                        </span>
-                      )}
-                    </div>
-
-                    {message.content?.trim() !== "" && (
-                      <p className=" text-sm leading-relaxed break-words">
-                        {message.content}
-                      </p>
-                    )}
-                    <MessageAttachments attachments={message.attachments} />
-                  </div>
-                </div>
+                <MessageComponent message={message} user={user} />
               </Fragment>
             ))}
             <div ref={endOfChatRef} />
@@ -359,41 +373,184 @@ export default function StudentServer() {
   );
 }
 
-export function ActionBar({ className }: { className?: string }) {
+export function MessageComponent({
+  message,
+  user,
+}: {
+  message: MessageData;
+  user: User | null;
+}) {
+  const { toggleReactions } = useServerContext();
+  return (
+    <div
+      className={`flex relative group ${
+        message.userId._id === user?._id && "flex-row-reverse"
+      } gap-3 p-3 rounded-lg transition-colors`}
+    >
+      <ActionBar
+        className={message.userId._id === user?._id ? "left-0" : "right-0"}
+        handleReactionChange={(emojiObject) =>
+          toggleReactions(message._id, emojiObject)
+        }
+      />
+      <Avatar className="h-10 w-10 rounded-full flex-shrink-0">
+        <AvatarImage src={message.userId.avatarURL} alt={message.userId.name} />
+        <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-sm font-medium">
+          {getInitials(message.userId.name)}
+        </AvatarFallback>
+      </Avatar>
+
+      <div
+        className={`flex flex-col ${
+          message.userId._id === user?._id && "items-end"
+        } min-w-0 gap-2`}
+      >
+        <div className="flex items-baseline gap-2 ">
+          <span className="font-semibold text-sm">
+            {message.userId._id === user?._id ? "Me" : message.userId.name}
+          </span>
+          <span className="text-xs text-gray-500">
+            {formatMessageTimestamp(message.timestamp)}
+          </span>
+          {message.editedTimestamp && (
+            <span className="text-xs text-gray-400 italic">(edited)</span>
+          )}
+        </div>
+
+        {message.content?.trim() !== "" && (
+          <span className="flex text-sm leading-relaxed break-words">
+            {message.content}
+          </span>
+        )}
+        <MessageAttachments
+          attachments={message.attachments}
+          className="flex"
+        />
+        <Reactions
+          reactions={reactions}
+          className={message.userId._id === user?._id ? "flex-row-reverse" : ""}
+        />
+      </div>
+    </div>
+  );
+}
+
+export function ActionBar({
+  className,
+  handleReactionChange,
+}: {
+  className?: string;
+  handleReactionChange: (emojiObject: EmojiClickData) => void;
+}) {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const emojiButtonRef = useRef<HTMLButtonElement>(null);
 
   return (
     <>
       {/* Desktop action bar */}
       <div
         className={cn(
-          "absolute top-2 z-10 hidden md:flex",
-          "opacity-0 group-hover:opacity-100 transition-opacity duration-200",
+          "absolute top-2 z-10 flex ",
+          "opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity duration-200",
           className
         )}
       >
-        <ButtonGroup className="flex items-center shadow-lg bg-white dark:bg-gray-800 rounded-lg border">
-          <Button variant="ghost" size="icon" className="h-8 w-8">
-            <Smile className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8">
-            <ThumbsUp className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8">
-            <Angry className="h-4 w-4" />
-          </Button>
-          <ButtonGroupSeparator />
-          <Button variant="ghost" size="icon" className="h-8 w-8">
-            <Reply className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8">
-            <Forward className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8">
-            <Ellipsis className="h-4 w-4" />
-          </Button>
+        <ButtonGroup className="flex items-center shadow-lg rounded-lg md:border">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                ref={emojiButtonRef}
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 hidden md:flex"
+                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+              >
+                <Smile className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Add Reaction</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 hidden md:flex"
+              >
+                <Forward className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Forward</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 hidden md:flex"
+              >
+                <Reply className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Reply</TooltipContent>
+          </Tooltip>
+          <DropdownMenu>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 ">
+                    <Ellipsis className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+              </TooltipTrigger>
+              <TooltipContent>More</TooltipContent>
+            </Tooltip>
+            <DropdownMenuContent className="w-56">
+              <DropdownMenuLabel>Panel Position</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuRadioGroup>
+                <DropdownMenuRadioItem value="top">Top</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="bottom">
+                  Bottom
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="right">
+                  Right
+                </DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </ButtonGroup>
       </div>
+
+      {/* Emoji Picker - Rendered at root level with fixed positioning */}
+      {showEmojiPicker && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 z-[999]"
+            onClick={() => setShowEmojiPicker(false)}
+          />
+          {/* Emoji Picker */}
+          <div
+            className="fixed z-[1000]"
+            style={{
+              top: emojiButtonRef.current
+                ? `${
+                    emojiButtonRef.current.getBoundingClientRect().bottom + 8
+                  }px`
+                : "50px",
+              left: emojiButtonRef.current
+                ? `${emojiButtonRef.current.getBoundingClientRect().left}px`
+                : "10px",
+            }}
+          >
+            <EmojiMenu
+              onEmojiClick={(emojiObject) => handleReactionChange(emojiObject)}
+            />
+          </div>
+        </>
+      )}
 
       {/* Mobile: Long press trigger */}
       <button
@@ -466,5 +623,27 @@ export function ActionBar({ className }: { className?: string }) {
         </div>
       )}
     </>
+  );
+}
+
+export function Reactions({
+  reactions,
+  className,
+}: {
+  reactions: Reaction[];
+  className?: string;
+}) {
+  return (
+    <div className={cn("flex flex-wrap gap-2", className)}>
+      {reactions.map((reaction, index) => (
+        <Button key={index} variant="outline" size="sm">
+          {/* Emoji */}
+          <span>{reaction.emoji}</span>
+
+          {/* Count */}
+          <span>{reaction.count}</span>
+        </Button>
+      ))}
+    </div>
   );
 }

@@ -689,6 +689,60 @@ export function ServerProvider({ children }: { children: ReactNode }) {
     setCurrentChannel(dm.channel);
   };
 
+  const updateReaction = (
+    messageId: string,
+    userId: string,
+    emoji: string,
+    newCount: number,
+    timestamp: string
+  ) => {
+    console.log("The count is ", newCount);
+    console.log("The emoji is", emoji);
+    setMessagesData((prevMessages) =>
+      prevMessages.map((message) => {
+        if (message._id !== messageId) return message;
+        if (newCount === 0) {
+          return {
+            ...message,
+            reactions: message.reactions.filter(
+              (reaction) => reaction.emoji !== emoji
+            ),
+          };
+        }
+        if (newCount === 1)
+          return {
+            ...message,
+            reactions: [
+              ...message.reactions,
+              {
+                emoji,
+                users: [
+                  {
+                    user: userId,
+                    timestamp,
+                  },
+                ],
+                count: newCount,
+              },
+            ],
+          };
+
+        const reactions = message.reactions.map((reaction) => {
+          if (reaction.emoji !== emoji) return reaction;
+          const userExists = reaction.users.find((doc) => doc.user === userId);
+          const users = userExists
+            ? reaction.users.filter((doc) => doc.user !== userId)
+            : [...reaction.users, { user: userId, timestamp }];
+
+          console.log("These are the new Users", users);
+          return { ...reaction, users, count: newCount };
+        });
+
+        return { ...message, reactions };
+      })
+    );
+  };
+
   useEffect(() => {
     if (!socketRef.current) {
       // Socket intialization
@@ -717,6 +771,8 @@ export function ServerProvider({ children }: { children: ReactNode }) {
         })
       );
     });
+
+    socket.on("reaction-updated", updateReaction);
 
     socket.on("request-accepted", (newFriend: Friend) => {
       setFriendsList((prev) => [...prev, newFriend]);
@@ -850,7 +906,7 @@ export function ServerProvider({ children }: { children: ReactNode }) {
     cancelFriendRequest,
     currentDM,
     changeDM,
-    toggleReactions
+    toggleReactions,
   };
 
   return (

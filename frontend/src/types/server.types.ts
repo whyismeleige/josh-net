@@ -29,7 +29,7 @@ export type AttachmentTransferProcess = "download" | "upload";
 
 export interface Reaction {
   emoji: string;
-  users: [{ userId: string; time: string }];
+  users: { user: string; timestamp: string }[];
   count: number;
 }
 

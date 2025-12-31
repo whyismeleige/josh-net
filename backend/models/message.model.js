@@ -45,11 +45,11 @@ const MessageSchema = new mongoose.Schema(
         },
         users: [
           {
-            userId: {
+            user: {
               type: mongoose.Schema.Types.ObjectId,
               ref: "User",
             },
-            time: {
+            timestamp: {
               type: Date,
               default: Date.now,
             },
@@ -103,7 +103,7 @@ const MessageSchema = new mongoose.Schema(
   }
 );
 
-MessageSchema.methods.toggleReactions = async function (emoji, userId) {
+MessageSchema.methods.toggleReaction = async function (emoji, userId) {
   const existingReaction = this.reactions.find(
     (reaction) => reaction.emoji === emoji
   );
@@ -125,6 +125,9 @@ MessageSchema.methods.toggleReactions = async function (emoji, userId) {
     } else {
       existingReaction.users.push({ user: userId });
       existingReaction.count++;
+    }
+    if(existingReaction.count === 0) {
+      this.reactions.pull(existingReaction);
     }
     count = existingReaction.count;
   }

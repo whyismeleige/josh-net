@@ -83,21 +83,19 @@ module.exports = (io, socket) => {
   );
 
   socket.on("toggle-reaction", async (channelId, messageId, userId, emoji) => {
-    console.log("Emojis are being added", emoji);
-    // const message = await Message.findById(messageId);
+    const message = await Message.findById(messageId);
 
-    // const newCount = await message.toggleReaction(emoji, userId);
+    const newCount = await message.toggleReaction(emoji, userId);
 
-    // socket
-    //   .to(channelId)
-    //   .emit(
-    //     "reaction_updated",
-    //     messageId,
-    //     userId,
-    //     emoji,
-    //     newCount,
-    //     (timestamp = new Date().toISOString())
-    //   );
+    console.log("The new count is", newCount);
+    io.to(channelId).emit(
+      "reaction-updated",
+      messageId,
+      userId,
+      emoji,
+      newCount,
+      (timestamp = new Date().toISOString())
+    );
   });
 };
 

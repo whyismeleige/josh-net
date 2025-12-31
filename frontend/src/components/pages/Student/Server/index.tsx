@@ -14,14 +14,10 @@ import EmojiMenu from "@/src/components/shared/Emoji-Picker";
 import { User } from "@/src/types/auth.types";
 import {
   Angry,
-  ArrowLeftIcon,
   Check,
-  CornerUpRight,
   Ellipsis,
   Forward,
   MessageCircle,
-  MoreHorizontal,
-  Pencil,
   Reply,
   Search,
   Smile,
@@ -31,7 +27,6 @@ import {
 import { Button } from "@/src/ui/button";
 import {
   ButtonGroup,
-  ButtonGroupSeparator,
 } from "@/components/ui/button-group";
 import { cn } from "@/lib/utils";
 import {
@@ -49,7 +44,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/src/ui/dropdown-menu";
-import { useStudentContext } from "@/src/context/material.provider";
 import { EmojiClickData } from "emoji-picker-react";
 
 const friends = Array(100).fill({
@@ -427,7 +421,7 @@ export function MessageComponent({
           className="flex"
         />
         <Reactions
-          reactions={reactions}
+          reactions={message.reactions}
           className={message.userId._id === user?._id ? "flex-row-reverse" : ""}
         />
       </div>

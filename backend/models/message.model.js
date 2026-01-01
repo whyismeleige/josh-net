@@ -12,6 +12,16 @@ const MessageSchema = new mongoose.Schema(
       enum: ["text", "image", "file", "embed"],
       default: "text",
     },
+    replyTo: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Message",
+      default: null,
+    },
+    forwardedMessage: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Message",
+      default: null,
+    },
     attachments: [
       {
         id: {
@@ -68,6 +78,10 @@ const MessageSchema = new mongoose.Schema(
     timestamp: {
       type: Date,
       default: Date.now,
+    },
+    isEdited: {
+      type: Boolean,
+      default: false,
     },
     editedTimestamp: {
       type: Date,

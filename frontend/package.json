@@ -12,6 +12,8 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@dicebear/collection": "^9.2.4",
+    "@dicebear/core": "^9.2.4",
     "@giphy/js-fetch-api": "^5.7.0",
     "@giphy/react-components": "^10.1.1",
     "@icons-pack/react-simple-icons": "^13.8.0",

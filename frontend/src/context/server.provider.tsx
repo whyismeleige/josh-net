@@ -64,6 +64,7 @@ export function ServerProvider({ children }: { children: ReactNode }) {
 
   const [view, setView] = useState<ViewMode>("friends");
   const [messagesLoading, setMessagesLoading] = useState(false);
+  const [replyMessage, setReplyMessage] = useState<MessageData | null>(null);
   const [friendsView, setFriendsView] = useState<FriendsState>("all");
   const [messageInput, setMessageInput] = useState<string>("");
   const [typingStatus, setTypingStatus] = useState<string>("");
@@ -85,8 +86,6 @@ export function ServerProvider({ children }: { children: ReactNode }) {
   const [friendsList, setFriendsList] = useState<Friend[]>([]);
   const [currentDM, setCurrentDM] = useState<Friend | null>(null);
   const [friendRequests, setFriendRequests] = useState<FriendRequests[]>([]);
-
-  console.log(channelData);
 
   const leftSidebar = leftSidebarState ?? !isMobile;
   const rightSidebar = rightSidebarState ?? !isMobile;
@@ -259,6 +258,9 @@ export function ServerProvider({ children }: { children: ReactNode }) {
         _id: nanoid(5),
         content: message,
         type: "text",
+        replyTo: replyMessage || null,
+        forwardedMessage: null,
+        isEdited: false,
         createdAt: new Date().toISOString(),
         timestamp: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -280,6 +282,7 @@ export function ServerProvider({ children }: { children: ReactNode }) {
           currentAttachments.length,
           messageData,
           message,
+          replyMessage?._id,
           newMessage._id
         );
 
@@ -329,6 +332,7 @@ export function ServerProvider({ children }: { children: ReactNode }) {
       } else {
         throw Error("Error in Sending Message, Try Again Later");
       }
+      setReplyMessage(null);
     } catch (error) {
       const message =
         error instanceof Error
@@ -538,8 +542,6 @@ export function ServerProvider({ children }: { children: ReactNode }) {
         throw new Error(data.message);
       }
 
-      console.log(data);
-
       setFriendRequests((prev) => [...prev, data.outgoingRequest]);
     } catch (error) {
       console.error("Error in Sending Friend Request");
@@ -696,8 +698,6 @@ export function ServerProvider({ children }: { children: ReactNode }) {
     newCount: number,
     timestamp: string
   ) => {
-    console.log("The count is ", newCount);
-    console.log("The emoji is", emoji);
     setMessagesData((prevMessages) =>
       prevMessages.map((message) => {
         if (message._id !== messageId) return message;
@@ -734,7 +734,6 @@ export function ServerProvider({ children }: { children: ReactNode }) {
             ? reaction.users.filter((doc) => doc.user !== userId)
             : [...reaction.users, { user: userId, timestamp }];
 
-          console.log("These are the new Users", users);
           return { ...reaction, users, count: newCount };
         });
 
@@ -788,6 +787,24 @@ export function ServerProvider({ children }: { children: ReactNode }) {
       );
     });
 
+    socket.on("message-edited", (messageId: string, editedContent: string) => {
+      console.log("New Edited Content", editedContent);
+      setMessagesData((prevMessages) =>
+        prevMessages.map((message) =>
+          message._id === messageId
+            ? { ...message, content: editedContent }
+            : message
+        )
+      );
+    });
+
+    socket.on("message-deleted", (messageId: string) => {
+      console.log("Message Deleted", messageId);
+      setMessagesData((prevMessages) =>
+        prevMessages.filter((message) => message._id !== messageId)
+      );
+    });
+
     socket.on("request-rejected", (userId: string) => {
       setFriendRequests((prev) =>
         prev.filter((request) => request.user._id !== userId)
@@ -802,6 +819,7 @@ export function ServerProvider({ children }: { children: ReactNode }) {
 
     socket.on("receive-message", (newMessage, tempMsgId) => {
       // Receive Message from Channel Room
+      console.log("Forwarded Message is", newMessage);
       if (
         pendingMessagesRef.current.has(tempMsgId) &&
         !pendingMessagesRef.current.get(tempMsgId)
@@ -813,6 +831,7 @@ export function ServerProvider({ children }: { children: ReactNode }) {
         );
         pendingMessagesRef.current.delete(tempMsgId);
       } else {
+        console.log("Adding new message");
         setMessagesData((prev) => [...prev, newMessage]);
       }
     });
@@ -907,6 +926,8 @@ export function ServerProvider({ children }: { children: ReactNode }) {
     currentDM,
     changeDM,
     toggleReactions,
+    replyMessage,
+    setReplyMessage,
   };
 
   return (

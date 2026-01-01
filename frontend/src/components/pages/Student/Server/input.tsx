@@ -48,6 +48,8 @@ export default function ServerInput() {
     messageInput,
     changeMessage,
     typingStatus,
+    replyMessage,
+    setReplyMessage
   } = useServerContext();
 
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
@@ -149,6 +151,27 @@ export default function ServerInput() {
             ></span>
           </div>
           <span className="text-xs">{typingStatus}</span>
+        </div>
+      )}
+      {/* Reply Message Preview */}
+      {replyMessage && (
+        <div className="mx-2 mb-2 px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-md border-l-2 border-blue-500 flex items-center justify-between gap-2">
+          <div className="flex flex-col gap-1 min-w-0 flex-1">
+            <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+              Replying to {replyMessage.userId.name}
+            </span>
+            <span className="text-xs text-gray-600 dark:text-gray-400 truncate">
+              {replyMessage.content || "Attachment"}
+            </span>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="h-6 w-6 rounded-full flex-shrink-0"
+            onClick={() => setReplyMessage(null)}
+          >
+            <X className="h-4 w-4" />
+          </Button>
         </div>
       )}
       {mediaBoard && (
@@ -303,7 +326,7 @@ function MediaKeyboard({
 
         <TabsContent value="emoji" className="m-0 ">
           <div className="max-h-[350px] overflow-hidden">
-            <EmojiMenu onEmojiClick={onEmojiClick}/>
+            <EmojiMenu onEmojiClick={onEmojiClick} />
           </div>
         </TabsContent>
 

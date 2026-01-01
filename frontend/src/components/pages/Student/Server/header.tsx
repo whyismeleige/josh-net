@@ -21,7 +21,7 @@ import {
 import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/src/ui/avatar";
 import { Tabs, TabsList, TabsTrigger } from "@/src/ui/tabs";
-import AddFriendDialog from "./dialogs";
+import  { AddFriendDialog } from "./dialogs";
 import { FriendsState } from "@/src/types/server.types";
 
 export default function ServerHeader() {

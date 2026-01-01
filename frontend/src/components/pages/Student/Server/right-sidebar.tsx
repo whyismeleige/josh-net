@@ -49,8 +49,8 @@ export default function RightSidebar() {
               <InputGroupInput placeholder="Search Users"/>
             </InputGroup>
           </div>
-          {currentServer?.users.map((user) => (
-            <Fragment key={user._id}>
+          {currentServer?.users.map((user, index) => (
+            <Fragment key={index}>
               <div
                 onMouseEnter={() => setUserId(user._id)}
                 onMouseLeave={() => setUserId(null)}
@@ -74,7 +74,7 @@ export default function RightSidebar() {
                 </div>
 
                 {/* Hover state / Expanded details - Positioned on TOP */}
-                {userId === user._id && (
+                {userId === user?._id && (
                   <div className="absolute left-0 top-0 -translate-y-1/2 -translate-x-full mb-1 p-4 bg-card border rounded-lg shadow-lg z-50 animate-in fade-in slide-in-from-bottom-2 duration-150 min-w-[250px]">
                     <div className="flex items-start gap-3">
                       <Avatar className="h-12 w-12 rounded-lg">

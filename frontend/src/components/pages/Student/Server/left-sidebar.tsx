@@ -30,7 +30,7 @@ import {
   AccordionTrigger,
 } from "@/src/ui/accordion";
 import { useAppSelector } from "@/src/hooks/redux";
-import AddFriendDialog from "./dialogs";
+import  { AddFriendDialog, CreateServerDialog } from "./dialogs";
 
 export const getChannelIcon = (channelType: ChannelType) => {
   switch (channelType) {
@@ -160,14 +160,7 @@ export default function ServerSidebar() {
                   <TooltipContent side="right">{server.name}</TooltipContent>
                 </Tooltip>
               ))}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button size="icon" className="rounded-2xl">
-                    <PlusCircle />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="right">Create A Server</TooltipContent>
-              </Tooltip>
+              <CreateServerDialog />
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button size="icon" className="rounded-2xl">
@@ -272,6 +265,7 @@ export function DirectMessageList({
   friendsList: Friend[];
   setCurrentDM: (dm: Friend) => void;
 }) {
+  
   return (
     <div className="w-full overflow-y-auto custom-scrollbar">
       <span className="mx-4 text-muted-foreground hover:no-underline hover:text-foreground">
@@ -284,11 +278,11 @@ export function DirectMessageList({
           onClick={() => setCurrentDM(dm)}
         >
           <Avatar className="rounded-lg">
-            <AvatarImage src={dm.user.avatarURL} alt={dm.user.name} />
+            <AvatarImage src={dm.user?.avatarURL} alt={dm.user?.name} />
             <AvatarFallback className="rounded-lg">CN</AvatarFallback>
           </Avatar>
           <div className="grid flex-1 text-left text-sm leading-tight">
-            <span className="truncate font-medium">{dm.user.name}</span>
+            <span className="truncate font-medium">{dm.user?.name}</span>
           </div>
         </div>
       ))}

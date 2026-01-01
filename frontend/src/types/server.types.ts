@@ -14,6 +14,7 @@ export type ChannelType =
   | "guild_text";
 
 export type ServerType =
+  | "private"
   | "class"
   | "department"
   | "college"
@@ -45,6 +46,21 @@ export interface FriendRequests {
   user: User;
   status: FriendRequestStatus;
   requestedAt: string;
+}
+
+export interface ForwardChannel {
+  serverId: string;
+  serverName: string;
+  serverIcon: string;
+  channelName: string;
+  channelId: string;
+  channelType: ChannelType;
+}
+
+export interface ForwardDM {
+  friendName: string;
+  friendAvatar: string;
+  channelId: string;
 }
 
 export interface Attachment {
@@ -91,9 +107,12 @@ export interface MessageData {
   content?: string | null;
   createdAt: string;
   deleted: string;
+  replyTo: MessageData | null;
+  forwardedMessage: MessageData | null;
   attachments: Attachment[];
   reactions: Reaction[];
   deletedAt?: string | null;
+  isEdited: boolean;
   editedTimestamp?: string | null;
   timestamp: string;
   type: MessageType;
@@ -133,4 +152,6 @@ export interface ServerContextType {
   currentDM: Friend | null;
   changeDM: (dm: Friend) => void;
   toggleReactions: (messageId: string, emojiObject: EmojiClickData) => void;
+  replyMessage: MessageData | null;
+  setReplyMessage: (message: MessageData | null) => void;
 }

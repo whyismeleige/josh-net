@@ -18,6 +18,10 @@ router.get("/channel/list", controller.listChannels);
 
 // Message Routes
 router.get("/message/list", controller.listMessages);
+router.get("/messages/forward/destinations", controller.getMessageDestinations);
+router.post("/messages/forward", controller.forwardMessages);
+router.patch("/message/edit", controller.editMessage);
+router.delete("/message", controller.deleteMessage);
 
 // Media Routes
 router.get("/media/stream", controller.streamMedia);

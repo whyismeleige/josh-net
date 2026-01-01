@@ -38,6 +38,7 @@ const ServerSchema = new mongoose.Schema(
       type: String,
       enum: {
         values: [
+          "private",
           "class",
           "department",
           "college",

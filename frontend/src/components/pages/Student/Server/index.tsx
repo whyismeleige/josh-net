@@ -15,19 +15,23 @@ import { User } from "@/src/types/auth.types";
 import {
   Angry,
   Check,
+  Copy,
+  Delete,
+  Edit,
   Ellipsis,
+  Flag,
   Forward,
   MessageCircle,
+  Pen,
   Reply,
   Search,
   Smile,
   ThumbsUp,
+  Trash,
   X,
 } from "lucide-react";
 import { Button } from "@/src/ui/button";
-import {
-  ButtonGroup,
-} from "@/components/ui/button-group";
+import { ButtonGroup } from "@/components/ui/button-group";
 import { cn } from "@/lib/utils";
 import {
   InputGroup,
@@ -38,6 +42,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/src/ui/tooltip";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
@@ -45,6 +51,12 @@ import {
   DropdownMenuTrigger,
 } from "@/src/ui/dropdown-menu";
 import { EmojiClickData } from "emoji-picker-react";
+import { useStudentContext } from "@/src/context/material.provider";
+import {
+  DeleteMessageDialog,
+  EditMessageDialog,
+  ForwardMessageDialog,
+} from "./dialogs";
 
 const friends = Array(100).fill({
   user: {
@@ -217,14 +229,14 @@ export default function StudentServer() {
                   >
                     <Avatar className="rounded-lg">
                       <AvatarImage
-                        src={friend.user.avatarURL}
-                        alt={friend.user.name}
+                        src={friend.user?.avatarURL}
+                        alt={friend.user?.name}
                       />
                       <AvatarFallback className="rounded-lg">CN</AvatarFallback>
                     </Avatar>
                     <div className="grid flex-1 text-left text-sm leading-tight">
                       <span className="truncate font-medium">
-                        {friend.user.name}
+                        {friend.user?.name}
                       </span>
                     </div>
                   </div>
@@ -240,7 +252,7 @@ export default function StudentServer() {
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        Chat with {friend.user.name}
+                        Chat with {friend.user?.name}
                       </TooltipContent>
                     </Tooltip>
                     <Tooltip>
@@ -340,6 +352,7 @@ export default function StudentServer() {
         <div className="flex-1 p-1 w-full max-w-full flex flex-col min-w-0">
           <div className="flex-1 overflow-y-auto space-y-4 p-1 custom-scrollbar">
             {messages.map((message, index) => (
+            
               <Fragment key={message._id}>
                 {!checkMessageInTransit(message._id) &&
                   shouldShowDateSeparator(
@@ -374,7 +387,8 @@ export function MessageComponent({
   message: MessageData;
   user: User | null;
 }) {
-  const { toggleReactions } = useServerContext();
+  const { toggleReactions, setReplyMessage } = useServerContext();
+
   return (
     <div
       className={`flex relative group ${
@@ -386,6 +400,8 @@ export function MessageComponent({
         handleReactionChange={(emojiObject) =>
           toggleReactions(message._id, emojiObject)
         }
+        replyMessage={() => setReplyMessage(message)}
+        message={message}
       />
       <Avatar className="h-10 w-10 rounded-full flex-shrink-0">
         <AvatarImage src={message.userId.avatarURL} alt={message.userId.name} />
@@ -411,6 +427,73 @@ export function MessageComponent({
           )}
         </div>
 
+        {/* Forwarded Message Preview */}
+        {message.forwardedMessage && (
+          <div
+            className={`flex flex-col gap-2 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-md border-l-2 border-blue-500 w-full ${
+              message.userId._id === user?._id && "self-end"
+            }`}
+          >
+            <div className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400">
+              <Forward className="h-4 w-4" />
+              <span className="font-medium">Forwarded message</span>
+            </div>
+
+            <div className="flex flex-col gap-1.5 pl-1">
+              <div className="flex items-center gap-2">
+                <Avatar className="h-6 w-6 rounded-full">
+                  <AvatarImage
+                    src={message.forwardedMessage.userId.avatarURL}
+                    alt={message.forwardedMessage.userId.name}
+                  />
+                  <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-500 text-white text-xs">
+                    {getInitials(message.forwardedMessage.userId.name)}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="font-semibold text-xs text-gray-700 dark:text-gray-300">
+                  {message.forwardedMessage.userId.name}
+                </span>
+                <span className="text-xs text-gray-500">
+                  {formatMessageTimestamp(message.forwardedMessage.timestamp)}
+                </span>
+              </div>
+
+              {message.forwardedMessage.content?.trim() !== "" && (
+                <span className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed break-words">
+                  {message.forwardedMessage.content}
+                </span>
+              )}
+
+              {message.forwardedMessage.attachments?.length > 0 && (
+                <MessageAttachments
+                  attachments={message.forwardedMessage.attachments}
+                  className="flex"
+                />
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Reply Message Preview */}
+        {message.replyTo && (
+          <div
+            className={`flex items-center w-full gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-md border-l-2 border-blue-500 text-xs ${
+              message.userId._id === user?._id && "self-end"
+            }`}
+          >
+            <div className="flex flex-col gap-1 min-w-0">
+              <span className="font-semibold text-gray-700 dark:text-gray-300">
+                {message.replyTo.userId._id === user?._id
+                  ? "Me"
+                  : message.replyTo.userId.name}
+              </span>
+              <span className="text-gray-600 dark:text-gray-400 truncate">
+                {message.replyTo.content || "Attachment"}
+              </span>
+            </div>
+          </div>
+        )}
+
         {message.content?.trim() !== "" && (
           <span className="flex text-sm leading-relaxed break-words">
             {message.content}
@@ -432,13 +515,21 @@ export function MessageComponent({
 export function ActionBar({
   className,
   handleReactionChange,
+  replyMessage,
+  message,
 }: {
   className?: string;
   handleReactionChange: (emojiObject: EmojiClickData) => void;
+  replyMessage: () => void;
+  message: MessageData;
 }) {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const emojiButtonRef = useRef<HTMLButtonElement>(null);
+
+  const { user } = useAppSelector((state) => state.auth);
+
+  const isUser = user?._id === message.userId._id;
 
   return (
     <>
@@ -465,24 +556,15 @@ export function ActionBar({
             </TooltipTrigger>
             <TooltipContent>Add Reaction</TooltipContent>
           </Tooltip>
+          {isUser && <EditMessageDialog message={message} />}
+          <ForwardMessageDialog message={message} />
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 hidden md:flex"
-              >
-                <Forward className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Forward</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 hidden md:flex"
+                onClick={replyMessage}
               >
                 <Reply className="h-4 w-4" />
               </Button>
@@ -501,17 +583,72 @@ export function ActionBar({
               <TooltipContent>More</TooltipContent>
             </Tooltip>
             <DropdownMenuContent className="w-56">
-              <DropdownMenuLabel>Panel Position</DropdownMenuLabel>
+              <DropdownMenuGroup>
+                <DropdownMenuItem
+                  onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                  className="flex justify-between"
+                >
+                  Add Reaction <Smile />
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
               <DropdownMenuSeparator />
-              <DropdownMenuRadioGroup>
-                <DropdownMenuRadioItem value="top">Top</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="bottom">
-                  Bottom
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="right">
-                  Right
-                </DropdownMenuRadioItem>
-              </DropdownMenuRadioGroup>
+              <DropdownMenuGroup>
+                {isUser && (
+                  <EditMessageDialog message={message}>
+                    <DropdownMenuItem
+                      onSelect={(e) => e.preventDefault()}
+                      className="flex justify-between"
+                    >
+                      Edit Message <Edit />
+                    </DropdownMenuItem>
+                  </EditMessageDialog>
+                )}
+                <DropdownMenuItem
+                  onClick={replyMessage}
+                  className="flex justify-between"
+                >
+                  Reply <Reply />
+                </DropdownMenuItem>
+                <ForwardMessageDialog message={message}>
+                  <DropdownMenuItem
+                    onSelect={(e) => e.preventDefault()}
+                    className="flex justify-between"
+                  >
+                    Forward <Forward />
+                  </DropdownMenuItem>
+                </ForwardMessageDialog>
+              </DropdownMenuGroup>
+              <DropdownMenuSeparator />
+              <DropdownMenuGroup>
+                <DropdownMenuItem
+                  onClick={() =>
+                    navigator.clipboard.writeText(message.content || "")
+                  }
+                  className="flex justify-between"
+                >
+                  Copy Message <Copy />
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+              <DropdownMenuSeparator />
+              <DropdownMenuGroup>
+                {isUser && (
+                  <DeleteMessageDialog message={message}>
+                    <DropdownMenuItem
+                      onSelect={(e) => e.preventDefault()}
+                      variant="destructive"
+                      className="flex justify-between "
+                    >
+                      Delete Message <Trash />
+                    </DropdownMenuItem>
+                  </DeleteMessageDialog>
+                )}
+              </DropdownMenuGroup>
+              {/* <DropdownMenuSeparator /> @todo Report Message
+              <DropdownMenuGroup>
+                <DropdownMenuItem variant="destructive" className="flex justify-between">
+                  Report Message <Flag />
+                </DropdownMenuItem>
+              </DropdownMenuGroup> */}
             </DropdownMenuContent>
           </DropdownMenu>
         </ButtonGroup>

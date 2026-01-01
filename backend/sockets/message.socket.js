@@ -13,11 +13,14 @@ const Channel = db.channel;
 module.exports = (io, socket) => {
   socket.on(
     "send-message",
-    async (attachmentsLength, metadata, message, tempMsgId) => {
+    async (attachmentsLength, metadata, message, replyMessageId, tempMsgId) => {
       const { serverId, channelId, userId } = metadata;
+
+      console.log("Reply to message", message.replyTo);
       let newMessage = await Message.create({
         userId: userId,
         content: message,
+        replyTo: replyMessageId,
       });
 
       const attachmentId = uuid.v4();
@@ -66,13 +69,25 @@ module.exports = (io, socket) => {
 
       newMessage = await newMessage.saveAttachments(attachments);
 
-      await newMessage.populate({
-        path: "userId",
-        transform: (doc) => {
-          if (!doc) return doc;
-          return sanitizeUser(doc);
+      await newMessage.populate([
+        {
+          path: "userId",
+          transform: (doc) => {
+            if (!doc) return doc;
+            return sanitizeUser(doc);
+          },
         },
-      });
+        {
+          path: "replyTo",
+          populate: {
+            path: "userId",
+            transform: (doc) => {
+              if (!doc) return doc;
+              return sanitizeUser(doc);
+            },
+          },
+        },
+      ]);
 
       await Channel.findByIdAndUpdate(channelId, {
         $push: { messages: newMessage._id },

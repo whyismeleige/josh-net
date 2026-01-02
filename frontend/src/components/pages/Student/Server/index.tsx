@@ -4,11 +4,10 @@ import RightSidebar from "./right-sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/src/ui/avatar";
 import { useAppSelector } from "@/src/hooks/redux";
 import { usePageTitle } from "@/src/hooks/usePageTitle";
-import React, { Fragment, useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { MessageAttachments } from "@/src/components/shared/Attachments";
 import ServerInput from "./input";
 import { MessageData, Reaction } from "@/src/types/server.types";
-import { useDynamicMetadata } from "@/src/hooks/useDynamicMetadata";
 import { Separator } from "@/src/ui/separator";
 import EmojiMenu from "@/src/components/shared/Emoji-Picker";
 import { User } from "@/src/types/auth.types";
@@ -16,13 +15,10 @@ import {
   Angry,
   Check,
   Copy,
-  Delete,
   Edit,
   Ellipsis,
-  Flag,
   Forward,
   MessageCircle,
-  Pen,
   Reply,
   Search,
   Smile,
@@ -44,33 +40,29 @@ import {
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/src/ui/dropdown-menu";
 import { EmojiClickData } from "emoji-picker-react";
-import { useStudentContext } from "@/src/context/material.provider";
 import {
   DeleteMessageDialog,
   EditMessageDialog,
   ForwardMessageDialog,
 } from "./dialogs";
 
-const friends = Array(100).fill({
-  user: {
-    name: `Random Name`,
-    avatarURL: `https://img.icons8.com/?size=48&id=kDoeg22e5jUY&format=png`,
-  },
-  channelID: "Random Channel",
-});
+// const friends = Array(100).fill({
+//   user: {
+//     name: `Random Name`,
+//     avatarURL: `https://img.icons8.com/?size=48&id=kDoeg22e5jUY&format=png`,
+//   },
+//   channelID: "Random Channel",
+// });
 
-const reactions: Reaction[] = Array(20).fill({
-  emoji: "😀",
-  users: [],
-  count: 100,
-});
+// const reactions: Reaction[] = Array(20).fill({
+//   emoji: "😀",
+//   users: [],
+//   count: 100,
+// });
 
 const getInitials = (name: string) => {
   return name
@@ -525,11 +517,23 @@ export function ActionBar({
 }) {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [emojiPickerPosition, setEmojiPickerPosition] = useState({ top: '50px', left: '10px' });
   const emojiButtonRef = useRef<HTMLButtonElement>(null);
 
   const { user } = useAppSelector((state) => state.auth);
 
   const isUser = user?._id === message.userId._id;
+
+  const handleEmojiPickerToggle = () => {
+    if (!showEmojiPicker && emojiButtonRef.current) {
+      const rect = emojiButtonRef.current.getBoundingClientRect();
+      setEmojiPickerPosition({
+        top: `${rect.bottom + 8}px`,
+        left: `${rect.left}px`,
+      });
+    }
+    setShowEmojiPicker(!showEmojiPicker);
+  };
 
   return (
     <>
@@ -549,7 +553,7 @@ export function ActionBar({
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 hidden md:flex"
-                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                onClick={handleEmojiPickerToggle}
               >
                 <Smile className="h-4 w-4" />
               </Button>
@@ -585,7 +589,7 @@ export function ActionBar({
             <DropdownMenuContent className="w-56">
               <DropdownMenuGroup>
                 <DropdownMenuItem
-                  onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                  onClick={handleEmojiPickerToggle}
                   className="flex justify-between"
                 >
                   Add Reaction <Smile />
@@ -643,12 +647,6 @@ export function ActionBar({
                   </DeleteMessageDialog>
                 )}
               </DropdownMenuGroup>
-              {/* <DropdownMenuSeparator /> @todo Report Message
-              <DropdownMenuGroup>
-                <DropdownMenuItem variant="destructive" className="flex justify-between">
-                  Report Message <Flag />
-                </DropdownMenuItem>
-              </DropdownMenuGroup> */}
             </DropdownMenuContent>
           </DropdownMenu>
         </ButtonGroup>
@@ -666,14 +664,8 @@ export function ActionBar({
           <div
             className="fixed z-[1000]"
             style={{
-              top: emojiButtonRef.current
-                ? `${
-                    emojiButtonRef.current.getBoundingClientRect().bottom + 8
-                  }px`
-                : "50px",
-              left: emojiButtonRef.current
-                ? `${emojiButtonRef.current.getBoundingClientRect().left}px`
-                : "10px",
+              top: emojiPickerPosition.top,
+              left: emojiPickerPosition.left,
             }}
           >
             <EmojiMenu

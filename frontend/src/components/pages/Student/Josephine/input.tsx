@@ -41,7 +41,6 @@ import {
   Paperclip,
   X,
 } from "lucide-react";
-import Image from "next/image";
 import { ChangeEvent, KeyboardEvent, useRef, useState } from "react";
 
 export default function JosephineInput() {

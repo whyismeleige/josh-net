@@ -118,6 +118,11 @@ ServerSchema.methods.addChannel = async function (channelId) {
   await this.save();
 };
 
+ServerSchema.methods.addMember = async function (userId) {
+  this.users = [...this.users, userId];
+  await this.save();
+}
+
 ServerSchema.statics.createNewServer = async function (data, userId) {
   return await this.create({
     name: data.name,
@@ -129,6 +134,7 @@ ServerSchema.statics.createNewServer = async function (data, userId) {
     academicInfo: data?.academicInfo,
     joinPolicy: data?.joinPolicy,
     users: [userId],
+    channels: data?.channels,
   });
 };
 

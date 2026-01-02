@@ -130,7 +130,7 @@ export function StudentProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }, [accessToken, dispatch]);
+  }, [accessToken, dispatch, currentPath]);
 
   const clearSelection = () => {
     setSelected(new Set<number>());

@@ -35,38 +35,38 @@ export default function FileViewer() {
 
   // Effect for reading text files
   useEffect(() => {
-    // Reset text first if not a text file
-    if (!fileBlob || !fileBlob.type.includes("text/plain")) {
-      setFileText("");
-      return;
+  // Only run if we have a text file
+  if (!fileBlob || !fileBlob.type.includes("text/plain")) {
+    return;
+  }
+
+  let isMounted = true;
+  const reader = new FileReader();
+  
+  reader.onload = () => {
+    if (!isMounted) return;
+    
+    let text: string;
+    if (typeof reader.result === "string") {
+      text = reader.result;
+    } else if (reader.result instanceof ArrayBuffer) {
+      const decoder = new TextDecoder("utf-8");
+      text = decoder.decode(reader.result);
+    } else {
+      text = "";
     }
+    setFileText(text);
+  };
+  
+  reader.readAsText(fileBlob);
+  
+  return () => {
+    isMounted = false;
+  };
+}, [fileBlob]);
 
-    let isMounted = true;
-    const reader = new FileReader();
-
-    reader.onload = () => {
-      if (!isMounted) return;
-
-      let text: string;
-
-      if (typeof reader.result === "string") {
-        text = reader.result;
-      } else if (reader.result instanceof ArrayBuffer) {
-        const decoder = new TextDecoder("utf-8");
-        text = decoder.decode(reader.result);
-      } else {
-        text = "";
-      }
-
-      setFileText(text);
-    };
-
-    reader.readAsText(fileBlob);
-
-    return () => {
-      isMounted = false;
-    };
-  }, [fileBlob]);
+// Derive the display value
+const displayText = fileBlob?.type.includes("text/plain") ? fileText : "";
 
   if (!fileBlob) {
     return null;

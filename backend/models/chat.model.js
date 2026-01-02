@@ -94,6 +94,10 @@ const ChatSchema = new mongoose.Schema(
               required: true,
               trim: true,
             },
+            cdnURL: {
+              type: String,
+              trim: true,
+            },
           },
         ],
 
@@ -265,12 +269,13 @@ ChatSchema.methods.saveConversation = async function (
     const s3Key = `${this.userId}/${this._id}/${title}`;
 
     // Upload file to S3 and get the public URL
-    const s3URL = await uploadS3File(s3Key, file.buffer);
+    const { s3URL, cdnURL } = await uploadS3File(s3Key, file.buffer);
 
     return {
       title,
       s3Key,
       s3URL,
+      cdnURL,
     };
   });
 

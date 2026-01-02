@@ -83,10 +83,26 @@ const uploadChatAttachment = multer({
   },
 });
 
+const uploadImages = multer({
+  storage: memoryStorage,
+  limits: {
+    fileSize: 50 * 1024 * 1024,
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith("image/")) {
+      console.log("The file is", file);
+      cb(null, true);
+    } else {
+      cb(new Error("Invalid file type or File not uploaded"), false);
+    }
+  },
+});
+
 module.exports = {
   upload,
   uploadForDownload,
   uploadToDynamicBucket,
   uploadEncrypted,
   uploadChatAttachment,
+  uploadImages,
 };

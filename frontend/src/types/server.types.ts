@@ -70,6 +70,7 @@ export interface Attachment {
   mimeType: string;
   s3Key: string;
   s3URL: string;
+  cdnURL: string;
   _id: string;
   transferring?: boolean;
   transferProcess?: AttachmentTransferProcess;
@@ -154,4 +155,9 @@ export interface ServerContextType {
   toggleReactions: (messageId: string, emojiObject: EmojiClickData) => void;
   replyMessage: MessageData | null;
   setReplyMessage: (message: MessageData | null) => void;
+  createNewServer: (
+    icon: File | null,
+    serverData: { name: string; description?: string; serverType: ServerType }
+  ) => Promise<void>;
+  joinServerViaInvite: (inviteCode: string) => Promise<void>;
 }

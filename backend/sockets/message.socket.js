@@ -1,3 +1,4 @@
+require("dotenv").config();
 const db = require("../models");
 const uuid = require("uuid");
 const fs = require("fs");
@@ -16,7 +17,6 @@ module.exports = (io, socket) => {
     async (attachmentsLength, metadata, message, replyMessageId, tempMsgId) => {
       const { serverId, channelId, userId } = metadata;
 
-      console.log("Reply to message", message.replyTo);
       let newMessage = await Message.create({
         userId: userId,
         content: message,
@@ -40,9 +40,11 @@ module.exports = (io, socket) => {
                 if (err) reject(err);
                 const buffer = fs.readFileSync(data.newPath);
 
-                const s3Key = `${serverId}/${channelId}/${newMessage._id}/${attachmentId}-${data.name}`;
+                const s3Key = `${serverId ? $`{serverId}/` : ""}${channelId}/${
+                  newMessage._id
+                }/${attachmentId}-${data.name}`;
 
-                const s3URL = await uploadS3File(s3Key, buffer);
+                const { s3URL, cdnURL } = await uploadS3File(s3Key, buffer);
 
                 fs.unlinkSync(data.newPath);
                 resolve({
@@ -50,6 +52,7 @@ module.exports = (io, socket) => {
                   fileName: data.name,
                   s3Key,
                   s3URL,
+                  cdnURL,
                   fileSize: data.size,
                   mimeType: data.type,
                 });
@@ -102,7 +105,6 @@ module.exports = (io, socket) => {
 
     const newCount = await message.toggleReaction(emoji, userId);
 
-    console.log("The new count is", newCount);
     io.to(channelId).emit(
       "reaction-updated",
       messageId,

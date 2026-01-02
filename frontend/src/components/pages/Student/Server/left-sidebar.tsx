@@ -1,7 +1,6 @@
 "use client";
 import {
   Inbox,
-  PlusCircle,
   Compass,
   Mic,
   Headphones,
@@ -12,6 +11,8 @@ import {
   Hash,
   PanelLeft,
   UsersRound,
+  ChevronDown,
+  UserPlus,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/src/ui/avatar";
 import { Button } from "@/src/ui/button";
@@ -20,7 +21,6 @@ import {
   ChannelData,
   ChannelType,
   Friend,
-  ViewMode,
 } from "@/src/types/server.types";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/src/ui/tooltip";
 import {
@@ -30,7 +30,18 @@ import {
   AccordionTrigger,
 } from "@/src/ui/accordion";
 import { useAppSelector } from "@/src/hooks/redux";
-import  { AddFriendDialog, CreateServerDialog } from "./dialogs";
+import {
+  AddFriendDialog,
+  CreateServerDialog,
+  InviteServerDialog,
+} from "./dialogs";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/src/ui/dropdown-menu";
 
 export const getChannelIcon = (channelType: ChannelType) => {
   switch (channelType) {
@@ -48,42 +59,42 @@ export const getChannelIcon = (channelType: ChannelType) => {
 };
 
 // Duplicate Data
-const dummyServers = Array(100).fill({
-  _id: `Random String ${Math.random()}`,
-  name: "Name",
-  description: "Description",
-  createdBy: "user",
-  icon: "https://img.icons8.com/ios-filled/100/university.png",
-  banner: "https://img.icons8.com/ios-filled/100/university.png",
-  serverType: "class",
-  channels: [],
-  users: [],
-  leaders: [],
-  createdAt: "Afjsjfdl",
-  updatedAt: "",
-});
+// const dummyServers = Array(100).fill({
+//   _id: `Random String ${Math.random()}`,
+//   name: "Name",
+//   description: "Description",
+//   createdBy: "user",
+//   icon: "https://img.icons8.com/ios-filled/100/university.png",
+//   banner: "https://img.icons8.com/ios-filled/100/university.png",
+//   serverType: "class",
+//   channels: [],
+//   users: [],
+//   leaders: [],
+//   createdAt: "Afjsjfdl",
+//   updatedAt: "",
+// });
 
-const dummyChannels = Array(100).fill({
-  _id: `Random String ${
-    Math.random() * 10000000 + (Math.random() / 2) * Math.random()
-  }`,
-  name: "Name",
-  description: "Description",
-  serverType: "class",
-  messages: [],
-  type: "text",
-  createdBy: "userId",
-  createdAt: "Afjsjfdl",
-  updatedAt: "",
-});
+// const dummyChannels = Array(100).fill({
+//   _id: `Random String ${
+//     Math.random() * 10000000 + (Math.random() / 2) * Math.random()
+//   }`,
+//   name: "Name",
+//   description: "Description",
+//   serverType: "class",
+//   messages: [],
+//   type: "text",
+//   createdBy: "userId",
+//   createdAt: "Afjsjfdl",
+//   updatedAt: "",
+// });
 
-const dummyDMs = Array(100).fill({
-  user: {
-    name: `Random Name`,
-    avatarURL: `https://img.icons8.com/?size=48&id=kDoeg22e5jUY&format=png`,
-  },
-  channelID: "Random Channel",
-});
+// const dummyDMs = Array(100).fill({
+//   user: {
+//     name: `Random Name`,
+//     avatarURL: `https://img.icons8.com/?size=48&id=kDoeg22e5jUY&format=png`,
+//   },
+//   channelID: "Random Channel",
+// });
 
 export default function ServerSidebar() {
   const {
@@ -173,9 +184,9 @@ export default function ServerSidebar() {
           </div>
 
           {/* Expandable Detail Panel */}
-          <div className="w-50 flex flex-col bg-sidebar border-r">
+          <div className="w-fit flex flex-col bg-sidebar border-r">
             {/* Panel Header */}
-            <div className="border-b p-4 space-y-3">
+            <div className="border-b p-2 space-y-3">
               <div className="flex items-center justify-between">
                 {view === "inbox" || view === "friends" ? (
                   <div className="flex flex-col gap-2 items-start">
@@ -190,9 +201,23 @@ export default function ServerSidebar() {
                     <AddFriendDialog triggerClass="hidden md:flex" />
                   </div>
                 ) : (
-                  <h2 className="text-base font-medium text-foreground">
-                    {currentServer?.name}
-                  </h2>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="p-0">
+                        {currentServer?.name}
+                        <ChevronDown size={3} />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-50">
+                      <DropdownMenuGroup>
+                        <InviteServerDialog>
+                          <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="flex justify-between">
+                            Invite to Server <UserPlus />
+                          </DropdownMenuItem>
+                        </InviteServerDialog>
+                      </DropdownMenuGroup>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 )}
                 <Button
                   className="md:hidden p-1 hover:bg-sidebar-accent rounded-md transition-colors size-7"
@@ -265,27 +290,26 @@ export function DirectMessageList({
   friendsList: Friend[];
   setCurrentDM: (dm: Friend) => void;
 }) {
-  
   return (
-    <div className="w-full overflow-y-auto custom-scrollbar">
-      <span className="mx-4 text-muted-foreground hover:no-underline hover:text-foreground">
-        Direct Messages
-      </span>
-      {friendsList.map((dm, index) => (
-        <div
-          key={index}
-          className="flex items-center gap-2 px-2 py-1.5 mx-2 rounded text-sm cursor-pointer transition-colors text-muted-foreground hover:bg-sidebar-accent/50 hover:text-foreground group"
-          onClick={() => setCurrentDM(dm)}
-        >
-          <Avatar className="rounded-lg">
-            <AvatarImage src={dm.user?.avatarURL} alt={dm.user?.name} />
-            <AvatarFallback className="rounded-lg">CN</AvatarFallback>
-          </Avatar>
-          <div className="grid flex-1 text-left text-sm leading-tight">
-            <span className="truncate font-medium">{dm.user?.name}</span>
+    <div className="w-full flex flex-col py-3 overflow-y-auto custom-scrollbar">
+      <p className="mx-4">Direct Messages</p>
+      <div className="w-fit">
+        {friendsList.map((dm, index) => (
+          <div
+            key={index}
+            className="flex items-center gap-2 px-2 py-1.5 mx-2 rounded text-sm cursor-pointer transition-colors text-muted-foreground hover:bg-sidebar-accent/50 hover:text-foreground group"
+            onClick={() => setCurrentDM(dm)}
+          >
+            <Avatar className="rounded-lg">
+              <AvatarImage src={dm.user?.avatarURL} alt={dm.user?.name} />
+              <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+            </Avatar>
+            <div className="grid flex-1 text-left text-sm leading-tight">
+              <span className="truncate font-medium">{dm.user?.name}</span>
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }

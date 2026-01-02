@@ -3,7 +3,6 @@ import { useAppSelector } from "@/src/hooks/redux";
 import JosephineInput from "./input";
 import { useJosephineContext } from "@/src/context/josephine.provider";
 import { useEffect } from "react";
-import Image from "next/image";
 
 export default function JosephineNewChat() {
   const { user } = useAppSelector((state) => state.auth);

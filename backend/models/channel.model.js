@@ -69,6 +69,35 @@ const ChannelSchema = new mongoose.Schema(
   }
 );
 
+const baseChannels = [
+  {
+    name: "general",
+    description: "Channel for General Descriptiong",
+    type: "guild_text",
+  },
+  {
+    name: "welcome-channel",
+    description: "Channel to Welcome new Users",
+    type: "guild_text",
+  },
+  {
+    name: "announcements",
+    description: "Channel to Publish Important Announcements",
+    type: "guild_announcement",
+  },
+];
+
+ChannelSchema.statics.createBaseChannels = async function (userId) {
+  const channels = baseChannels.map((channel) => ({
+    ...channel,
+    createdBy: userId,
+  }));
+
+  const docs = await this.create(channels);
+
+  return docs.map((doc) => doc._id);
+};
+
 ChannelSchema.statics.createNewDM = async function (participants) {
   return await this.create({
     type: "dm",

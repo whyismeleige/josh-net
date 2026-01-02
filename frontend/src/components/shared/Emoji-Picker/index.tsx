@@ -1,4 +1,4 @@
-import EmojiPicker, { EmojiStyle, Theme } from "emoji-picker-react";
+import EmojiPicker, { EmojiClickData, EmojiStyle, Theme } from "emoji-picker-react";
 import { useTheme } from "next-themes";
 
 const detectDeviceType = (userAgent: string): EmojiStyle => {
@@ -11,7 +11,7 @@ const detectDeviceType = (userAgent: string): EmojiStyle => {
 export default function EmojiMenu({
   onEmojiClick,
 }: {
-  onEmojiClick: (emojiObject: any) => void;
+  onEmojiClick: (emoji: EmojiClickData, event: MouseEvent) => void;
 }) {
   const { theme } = useTheme();
   return (

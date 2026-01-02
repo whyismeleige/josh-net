@@ -4,7 +4,6 @@ import {
   Bell,
   PanelLeft,
   PhoneCall,
-  Pin,
   Search,
   ShieldUser,
   Users,
@@ -36,7 +35,7 @@ export default function ServerHeader() {
     currentDM,
   } = useServerContext();
 
-  const [isSearch, setIsSearch] = useState(false);
+  const [isSearch] = useState(false);
 
   const serverButtonsData = [
     {

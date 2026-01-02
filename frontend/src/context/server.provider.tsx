@@ -17,6 +17,7 @@ import {
   MessageData,
   ServerContextType,
   ServerData,
+  ServerType,
   ViewMode,
 } from "../types/server.types";
 import { BACKEND_URL } from "../utils/config";
@@ -63,7 +64,6 @@ export function ServerProvider({ children }: { children: ReactNode }) {
   const { accessToken, user } = useAppSelector((state) => state.auth);
 
   const [view, setView] = useState<ViewMode>("friends");
-  const [messagesLoading, setMessagesLoading] = useState(false);
   const [replyMessage, setReplyMessage] = useState<MessageData | null>(null);
   const [friendsView, setFriendsView] = useState<FriendsState>("all");
   const [messageInput, setMessageInput] = useState<string>("");
@@ -101,6 +101,97 @@ export function ServerProvider({ children }: { children: ReactNode }) {
         currentChannel?._id,
         user?._id,
         user?.name
+      );
+    }
+  };
+
+  const createNewServer = async (
+    icon: File | null,
+    serverData: { name: string; description?: string; serverType: ServerType }
+  ) => {
+    try {
+      const formData = new FormData();
+      if (icon) formData.append("icon", icon);
+      formData.append("data", JSON.stringify(serverData));
+
+      const response = await fetch(`${BACKEND_URL}/api/v1/server/create`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (data.type !== "success") throw new Error(data.message);
+
+      dispatch(
+        addNotification({
+          type: "success",
+          title: "Successfully Created New Server",
+          description: data.message,
+        })
+      );
+
+      setServerData((prevServers) => [...prevServers, data.newServer]);
+      setCurrentServer(data.newServer);
+    } catch (error) {
+      console.error("Error in Creating New Server");
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Server Error, Try Again Later";
+
+      dispatch(
+        addNotification({
+          title: "Error in Creating New Server",
+          description: message,
+          type: "error",
+        })
+      );
+    }
+  };
+
+  const joinServerViaInvite = async (inviteCode: string) => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/v1/server/join/invite`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ inviteCode }),
+      });
+
+      const data = await response.json();
+
+      console.log(data);
+
+      if (data.type !== "success") throw new Error(data.message);
+
+      setServerData((prevServers) => [...prevServers, data.server]);
+
+      dispatch(
+        addNotification({
+          title: "Joined Server Successfully",
+          type: data.type,
+          description: data.message,
+        })
+      );
+    } catch (error) {
+      console.error("Error in Creating New Server");
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Server Error, Try Again Later";
+
+      dispatch(
+        addNotification({
+          title: "Error in Creating New Server",
+          description: message,
+          type: "error",
+        })
       );
     }
   };
@@ -249,6 +340,7 @@ export function ServerProvider({ children }: { children: ReactNode }) {
           mimeType: attachment.type,
           s3Key: "",
           s3URL: "",
+          cdnURL: "",
           transferProcess: "upload",
           transferring: true,
         })
@@ -315,7 +407,7 @@ export function ServerProvider({ children }: { children: ReactNode }) {
           pendingMessagesRef.current.set(newMessage._id, false);
         };
 
-        const handleUploadError = (error: Error) => {
+        const handleUploadError = () => {
           pendingMessagesRef.current.set(newMessage._id, false);
         };
 
@@ -352,7 +444,7 @@ export function ServerProvider({ children }: { children: ReactNode }) {
     messageInput,
     currentServer?._id,
     currentChannel?._id,
-
+    replyMessage,
     user?._id,
     user,
   ]);
@@ -787,6 +879,26 @@ export function ServerProvider({ children }: { children: ReactNode }) {
       );
     });
 
+    socket.on("new-member-joined", (serverId, newUser) => {
+      console.log("New Member Joined", newUser);
+      setServerData((prevServers) =>
+        prevServers.map((server) =>
+          server._id === serverId
+            ? { ...server, users: [...server.users, newUser] }
+            : server
+        )
+      );
+      if (currentServer && currentServer._id === serverId)
+        setCurrentServer((prev) => {
+          return prev
+            ? {
+                ...prev,
+                users: [prev.users, newUser],
+              }
+            : null;
+        });
+    });
+
     socket.on("message-edited", (messageId: string, editedContent: string) => {
       console.log("New Edited Content", editedContent);
       setMessagesData((prevMessages) =>
@@ -860,7 +972,7 @@ export function ServerProvider({ children }: { children: ReactNode }) {
         socketRef.current = null;
       }
     };
-  }, []);
+  }, [currentServer, dispatch, user?._id]);
 
   useEffect(() => {
     if (isIntialMount.current) {
@@ -875,23 +987,32 @@ export function ServerProvider({ children }: { children: ReactNode }) {
     if (!currentChannel || !socketRef.current) return;
 
     console.log("Joining Channel:", currentChannel._id); // Join the Channel
-    socketRef.current.emit("join-channel", currentChannel._id, user?._id);
+    socketRef.current.emit("join-channel", currentChannel._id);
     getMessagesList(currentChannel._id);
 
     return () => {
       if (socketRef.current) {
         // Cleanup Function will Disconnect the Room which was joined
         console.log("Leaving Channel", currentChannel._id);
-        socketRef.current.emit("leave-channel", currentChannel._id, user?._id);
+        socketRef.current.emit("leave-channel", currentChannel._id);
       }
     };
-  }, [currentChannel, currentChannel?._id, user?._id, getMessagesList]);
+  }, [currentChannel, currentChannel?._id, getMessagesList]);
 
   useEffect(() => {
     // UseEffect when Current Server Changes
-    if (!currentServer) return;
+    if (!currentServer || !socketRef.current) return;
 
+    console.log("Joining Server", currentServer._id); // Join the Server
+    socketRef.current.emit("join-server", currentServer._id);
     getChannelList(currentServer._id); // Get the Channel List of the Current Server
+
+    return () => {
+      if (socketRef.current) {
+        console.log("Leaving Server", currentServer._id);
+        socketRef.current.emit("leave-server", currentServer._id);
+      }
+    };
   }, [currentServer, currentServer?._id, getChannelList]);
 
   const value: ServerContextType = {
@@ -928,6 +1049,8 @@ export function ServerProvider({ children }: { children: ReactNode }) {
     toggleReactions,
     replyMessage,
     setReplyMessage,
+    createNewServer,
+    joinServerViaInvite,
   };
 
   return (

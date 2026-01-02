@@ -1,10 +1,8 @@
-"use client";
-import { Button } from "@/src/ui/button";
+"use client"
 import { useJosephineContext } from "@/src/context/josephine.provider";
 import {
   CirclePlus,
   MessagesSquare,
-  PanelLeft,
 } from "lucide-react";
 import Link from "next/link";
 

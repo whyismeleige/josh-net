@@ -43,6 +43,11 @@ const MessageSchema = new mongoose.Schema(
           required: true,
           trim: true,
         },
+        cdnURL: {
+          type: String,
+          required: true,
+          trim: true,
+        },
         fileSize: mongoose.Schema.Types.Int32,
         mimeType: String,
       },
@@ -140,7 +145,7 @@ MessageSchema.methods.toggleReaction = async function (emoji, userId) {
       existingReaction.users.push({ user: userId });
       existingReaction.count++;
     }
-    if(existingReaction.count === 0) {
+    if (existingReaction.count === 0) {
       this.reactions.pull(existingReaction);
     }
     count = existingReaction.count;

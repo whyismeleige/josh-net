@@ -52,9 +52,7 @@ import { CheckedState } from "@radix-ui/react-checkbox";
 import {
   BadgeCheckIcon,
   ChevronRightIcon,
-  Delete,
   Forward,
-  ImageIcon,
   Paperclip,
   Pen,
   PlusCircle,
@@ -82,35 +80,45 @@ export function AddFriendDialog({ triggerClass }: { triggerClass?: string }) {
   const [loading, setLoading] = useState(false);
 
   const onSearchChange = async (e: ChangeEvent<HTMLInputElement>) => {
-    setLoading(true);
     setSearchInput(e.target.value);
   };
 
   useEffect(() => {
     if (!searchInput.trim()) {
-      setLoading(false);
       setSearchResults([]);
       return;
     }
 
+    setLoading(true);
     const timeoutId = setTimeout(async () => {
-      const response = await fetch(`${BACKEND_URL}/api/v1/inbox/search-user`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ keyword: searchInput }),
-      });
+      try {
+        const response = await fetch(
+          `${BACKEND_URL}/api/v1/inbox/search-user`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ keyword: searchInput }),
+          }
+        );
 
-      const data = await response.json();
-
-      setLoading(false);
-      setSearchResults(data.results);
+        const data = await response.json();
+        setSearchResults(data.results);
+      } catch (error) {
+        console.error("Search failed:", error);
+        setSearchResults([]);
+      } finally {
+        setLoading(false);
+      }
     }, 1000);
 
-    return () => clearTimeout(timeoutId);
-  }, [searchInput]);
+    return () => {
+      setLoading(false);
+      clearTimeout(timeoutId);
+    };
+  }, [searchInput, accessToken]);
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -169,7 +177,7 @@ export function AddFriendDialog({ triggerClass }: { triggerClass?: string }) {
               </div>
             </>
           ) : searchInput.trim() && searchResults.length === 0 ? (
-            <span>No Users found with "{searchInput}"</span>
+            <span>No Users found with &quot;{searchInput}&quot;</span>
           ) : (
             <div className="custom-scrollbar overflow-y-auto max-h-[175px]">
               {searchResults.map((user) => (
@@ -768,20 +776,57 @@ export function CreateServerDialog({ children }: { children?: ReactNode }) {
   const profileImageRef = useRef<HTMLInputElement>(null);
 
   const { user } = useAppSelector((state) => state.auth);
+  const { createNewServer, joinServerViaInvite } = useServerContext();
 
+  const [loading, setLoading] = useState(false);
+  const [icon, setIcon] = useState<File | null>(null);
   const [step, setStep] = useState<"initial" | "create" | "join">("initial");
-  const [newServer, setNewServer] = useState(`${user?.name}'s server`);
+  const [serverName, setServerName] = useState(`${user?.name}'s server`);
   const [description, setDescription] = useState("");
+  const [serverType, setServerType] = useState<ServerType>("private");
   const [inviteCode, setInviteCode] = useState("");
+  const [serverIcon, setServerIcon] = useState("");
 
-  const handleImageUpload = (e: MouseEvent<HTMLButtonElement, globalThis.MouseEvent>) => {
+  const handleImageUpload = (
+    e: MouseEvent<HTMLButtonElement, globalThis.MouseEvent>
+  ) => {
     e.preventDefault();
     profileImageRef.current?.click();
   };
 
-  const uploadImage = () => {
-    
-  }
+  const uploadImage = (e: ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const file = e.target.files[0];
+
+    if (file.type.startsWith("image/")) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setServerIcon(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+      setIcon(file);
+    }
+  };
+
+  const handleSubmit = async () => {
+    try {
+      setLoading(true);
+      if (step === "create") {
+        return await createNewServer(icon, {
+          name: serverName,
+          description,
+          serverType,
+        });
+      }
+      if (step === "join") {
+        return await joinServerViaInvite(inviteCode);
+      }
+    } catch (error) {
+      console.error("Error in Creating new Server", error);
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <Dialog>
       <Tooltip>
@@ -847,19 +892,28 @@ export function CreateServerDialog({ children }: { children?: ReactNode }) {
               <div className="flex justify-center">
                 <div className="relative">
                   <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center">
-                    <img />
+                    {serverIcon.trim() ? (
+                      <img
+                        className="rounded-full w-20 h-20"
+                        src={serverIcon}
+                        alt={serverName}
+                      />
+                    ) : (
+                      <UploadIcon />
+                    )}
                   </div>
+                  <Input
+                    ref={profileImageRef}
+                    type="file"
+                    onChange={uploadImage}
+                    accept="image/*"
+                    hidden
+                  />
                   <Button
                     onClick={(e) => handleImageUpload(e)}
                     size="icon"
                     className="absolute -bottom-1 -right-1 rounded-full h-8 w-8"
                   >
-                    <Input
-                      ref={profileImageRef}
-                      type="file"
-                      onChange={uploadImage}
-                      hidden
-                    />
                     <UploadIcon className="size-4" />
                   </Button>
                 </div>
@@ -870,8 +924,8 @@ export function CreateServerDialog({ children }: { children?: ReactNode }) {
                   autoFocus
                   type="text"
                   placeholder={`${user?.name}'s server`}
-                  value={newServer}
-                  onChange={(e) => setNewServer(e.target.value)}
+                  value={serverName}
+                  onChange={(e) => setServerName(e.target.value)}
                 />
                 <Label>Server Description</Label>
                 <Textarea
@@ -901,10 +955,15 @@ export function CreateServerDialog({ children }: { children?: ReactNode }) {
             <div className="space-y-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Invite Code</label>
-                <Input type="text" placeholder="hTfsake" />
+                <Input
+                  type="text"
+                  placeholder="hTKzmak4"
+                  value={inviteCode}
+                  onChange={(e) => setInviteCode(e.target.value)}
+                />
               </div>
               <p className="text-xs text-muted-foreground">
-                Invites should look like: hTKzmak
+                Invites should look like: hTKzmak4
               </p>
             </div>
           </>
@@ -914,13 +973,94 @@ export function CreateServerDialog({ children }: { children?: ReactNode }) {
             <Button variant="ghost" onClick={() => setStep("initial")}>
               Back
             </Button>
-            <Button>
+            <Button onClick={handleSubmit}>
               {step === "create" && "Create"}
               {step === "join" && "Join"} Server
             </Button>
           </DialogFooter>
         )}
       </DialogContent>
+    </Dialog>
+  );
+}
+
+export function InviteServerDialog({ children }: { children?: ReactNode }) {
+  const dispatch = useAppDispatch();
+
+  const [inviteCode, setInviteCode] = useState<string>("");
+
+  const { accessToken } = useAppSelector((state) => state.auth);
+  const { currentServer } = useServerContext();
+
+  const handleChange = async (open: boolean) => {
+    try {
+      if (!open || inviteCode) return;
+
+      const response = await fetch(
+        `${BACKEND_URL}/api/v1/server/create/invite`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ serverId: currentServer?._id }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.type !== "success") throw new Error(data.message);
+
+      setInviteCode(data.inviteCode);
+    } catch (error) {
+      console.error("Error in Editing Message");
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Server Error, Try Again Later";
+
+      dispatch(
+        addNotification({
+          title: "Error in Editing Message",
+          description: message,
+          type: "error",
+        })
+      );
+    }
+  };
+
+  return (
+    <Dialog onOpenChange={handleChange}>
+      <Tooltip>
+        <DialogTrigger asChild>
+          {children ? (
+            children
+          ) : (
+            <div>
+              <TooltipTrigger asChild>
+                <Button size="icon" className="rounded-2xl">
+                  <UserPlus />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">Invite to Server</TooltipContent>
+            </div>
+          )}
+        </DialogTrigger>
+        <DialogContent>
+          <DialogTitle>Invite friends to {currentServer?.name}</DialogTitle>
+          <DialogDescription>
+            Send a Server Invite Code to A Friend
+          </DialogDescription>
+          <div className="flex gap-2">
+            <Input value={inviteCode} readOnly />
+            <Button onClick={() => navigator.clipboard.writeText(inviteCode)}>
+              Copy
+            </Button>
+          </div>
+          <Label>Your invite expires in 7 days</Label>
+        </DialogContent>
+      </Tooltip>
     </Dialog>
   );
 }

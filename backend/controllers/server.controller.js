@@ -2,16 +2,18 @@ const db = require("../models");
 const path = require("path");
 
 const { sanitizeUser } = require("../utils/auth.utils");
-const { downloadSingleFile } = require("../utils/s3.utils");
+const { uploadS3File } = require("../utils/s3.utils");
 
 const Server = db.server;
 const User = db.user;
 const Channel = db.channel;
 const Message = db.message;
+const ServerInvite = db.serverInvite;
 
 exports.createServer = async (req, res) => {
   try {
-    const { data } = req.body;
+    const data = JSON.parse(req.body.data);
+    const icon = req.file;
 
     if (!data) {
       return res.status(400).send({
@@ -20,7 +22,12 @@ exports.createServer = async (req, res) => {
       });
     }
 
-    const newServer = await Server.createNewServer(data, req.user._id);
+    const channels = await Channel.createBaseChannels(req.user._id);
+
+    let newServer = await Server.createNewServer(
+      { ...data, channels },
+      req.user._id
+    );
 
     if (!newServer) {
       return res.status(400).send({
@@ -29,16 +36,146 @@ exports.createServer = async (req, res) => {
       });
     }
 
+    if (icon) {
+      const key = `${newServer._id}/icon/${icon.originalname}`;
+      const { cdnURL } = await uploadS3File(key, icon.buffer);
+      newServer = await Server.findByIdAndUpdate(
+        newServer._id,
+        { $set: { icon: cdnURL } },
+        { new: true }
+      );
+    }
+
     const user = await User.findById(req.user._id);
 
     await user.addNewServer(newServer._id);
 
+    await newServer.populate({
+      path: "users",
+      transform: (doc) => {
+        if (!doc) return doc;
+        return sanitizeUser(doc);
+      },
+    });
+
     res.status(200).send({
       message: "Server created successfully",
       type: "success",
+      newServer,
     });
   } catch (error) {
     console.error("Error in Creating Server", error);
+    res.status(500).send({
+      message: error.message || "Server Error",
+      type: "error",
+    });
+  }
+};
+
+exports.createUserInvite = async (req, res) => {
+  try {
+    const { serverId } = req.body;
+
+    const serverExists = await Server.findOne({
+      _id: serverId,
+      users: req.user._id,
+    });
+
+    if (!serverExists) {
+      return res.status(400).send({
+        message: "Invalid Server Provided, Try Again Later",
+        type: "error",
+      });
+    }
+
+    const existingInvite = await ServerInvite.findOne({
+      serverId,
+      createdBy: req.user._id,
+    });
+
+    const invite = existingInvite
+      ? existingInvite
+      : await ServerInvite.createInviteCode(serverId, req.user._id);
+
+    res.status(200).send({
+      message: "Successfully Generated Invite Code",
+      type: "success",
+      inviteCode: invite.code,
+    });
+  } catch (error) {
+    console.error("Error in Creating Server Invite", error);
+    res.status(500).send({
+      message: error.message || "Server Error",
+      type: "error",
+    });
+  }
+};
+
+exports.joinServerViaInvite = async (req, res) => {
+  try {
+    const { inviteCode } = req.body;
+
+    if (!inviteCode) {
+      return res.status(400).send({
+        message: "Invalid InviteCode, Try Again Later",
+        type: "error",
+      });
+    }
+
+    const inviteVerified = await ServerInvite.findOne({
+      code: inviteCode,
+    });
+
+    if (!inviteVerified) {
+      return res.status(400).send({
+        message: "This invite is either invalid or has expired",
+        type: "error",
+      });
+    }
+
+    let server = await Server.findById(inviteVerified.serverId);
+
+    if (!server) {
+      return res.status(400).send({
+        message: "Server Not found",
+        type: "error",
+      });
+    }
+
+    const userAlreadyJoined = server.users.includes(req.user._id);
+
+    if (userAlreadyJoined) {
+      return res.status(400).send({
+        message: "You are already a member of this server",
+        type: "error",
+      });
+    }
+
+    const io = req.app.get("io");
+
+    const user = await User.findById(req.user._id);
+
+    await user.addNewServer(server._id);
+
+    server = await server.addMember(user._id);
+    server = await server.populate({
+      path: "users",
+      transform: (doc) => {
+        if (!doc) return doc;
+        return sanitizeUser(doc);
+      },
+    });
+
+    io.to(server._id).emit("new-member-joined", server._id, user);
+
+    res.status(200).send({
+      message: "Joined Server Successfully",
+      type: "success",
+      server,
+
+    });
+  } catch (error) {
+    console.error("Error in Joining Server", error);
     res.status(500).send({
       message: error.message || "Server Error",
       type: "error",
@@ -203,56 +340,6 @@ exports.listMessages = async (req, res) => {
   }
 };
 
-exports.streamMedia = async (req, res) => {
-  try {
-    const key = req.query.key;
-
-    const response = await downloadSingleFile(key);
-
-    res.setHeader("Content-Type", response.ContentType);
-    res.setHeader("Content-Length", response.ContentLength);
-    res.setHeader(
-      "Content-Disposition",
-      `inline; filename="${path.basename(key)}"`
-    );
-
-    res.setHeader("Cache-Control", "public, max-age=31536000");
-
-    response.Body.pipe(res);
-  } catch (error) {
-    console.error("Error in Streaming Media", error);
-    res.status(500).send({
-      message: error.message || "Server Error",
-      type: "error",
-    });
-  }
-};
-
-exports.downloadMedia = async (req, res) => {
-  try {
-    const key = req.query.key;
-
-    const response = await downloadSingleFile(key);
-
-    res.setHeader("Content-Type", response.ContentType);
-    res.setHeader("Content-Length", response.ContentLength);
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename="${path.basename(key)}"`
-    );
-
-    res.setHeader("Cache-Control", "public, max-age=31536000");
-
-    response.Body.pipe(res);
-  } catch (error) {
-    console.error("Error in Downloading Media", error);
-    res.status(500).send({
-      message: "Error in Downloading Media",
-      type: "error",
-    });
-  }
-};
-
 exports.getMessageDestinations = async (req, res) => {
   try {
     const user = await User.findById(req.user._id)
@@ -342,7 +429,6 @@ exports.forwardMessages = async (req, res) => {
     }
 
     for (const channelId of channelIds) {
-      console.log("The channel Id is", channelId);
       await Channel.findByIdAndUpdate(channelId, {
         $push: { messages: newMessage._id },
       });

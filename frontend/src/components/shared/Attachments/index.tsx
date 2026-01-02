@@ -18,9 +18,6 @@ import { Attachment } from "@/src/types/server.types";
 import { Button } from "@/src/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Spinner } from "@/src/ui/spinner";
-import { BACKEND_URL } from "@/src/utils/config";
-import { useEffect, useState } from "react";
-import { useAppSelector } from "@/src/hooks/redux";
 
 const formatFileSize = (bytes: number) => {
   if (bytes === 0) return "0 Bytes";
@@ -164,46 +161,19 @@ const getFileIcon = (fileType: string) => {
   }
 };
 
-const downloadFile = async (
-  key: string,
-  fileName: string,
-  accessToken: string | null
-) => {
+const downloadFile = async (cdnURL: string, fileName: string) => {
   try {
-    if (!accessToken) return;
-    console.log("Filename", fileName);
-    const response = await fetch(
-      `${BACKEND_URL}/api/v1/server/media/download?key=${key}`,
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error("Failed to download file");
-    }
-
-    const blob = await response.blob();
-    const url = URL.createObjectURL(blob);
-
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = fileName;
-    if(!link) return;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    URL.revokeObjectURL(url);
+    const a = document.createElement("a");
+    a.href = cdnURL;
+    a.download = fileName;
+    a.target = "_blank";
+    a.click();
   } catch (error) {
-    console.error("Download failed:", error);
+    console.error("Error in Downloading File", error);
   }
 };
 // --- Sub-Component: File Card (PDFs, Docs, Zips) ---
 const FileAttachmentCard = ({ file }: { file: Attachment }) => {
-  const { accessToken } = useAppSelector((state) => state.auth);
   const fileType = getFileType(file.mimeType);
   return (
     <div className="group flex flex-col gap-4 rounded-md border bg-background/50 p-3 transition-colors hover:bg-accent hover:text-accent-foreground">
@@ -235,7 +205,7 @@ const FileAttachmentCard = ({ file }: { file: Attachment }) => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => downloadFile(file.s3Key, file.fileName, accessToken)}
+            onClick={() => downloadFile(file.cdnURL, file.fileName)}
             className="rounded-md h-8 w-8"
           >
             <Download className="h-4 w-4" />
@@ -259,80 +229,9 @@ const VideoAttachment = ({
   video: Attachment;
   className?: string;
 }) => {
-  const [videoUrl, setVideoUrl] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-
-  const { accessToken } = useAppSelector((state) => state.auth);
-
-  useEffect(() => {
-    const fetchVideo = async () => {
-      try {
-        const response = await fetch(
-          `${BACKEND_URL}/api/v1/server/media/stream?key=${video.s3Key}`,
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch video");
-        }
-
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        setVideoUrl(url);
-        setLoading(false);
-      } catch (err) {
-        console.error("Error loading video:", err);
-        setError(true);
-        setLoading(false);
-      }
-    };
-
-    fetchVideo();
-
-    return () => {
-      if (videoUrl) {
-        URL.revokeObjectURL(videoUrl);
-      }
-    };
-  }, [video.s3Key, accessToken]);
-
-  if (loading) {
-    return (
-      <div
-        className={cn(
-          "flex items-center justify-center bg-muted rounded-xl",
-          className
-        )}
-      >
-        <div className="flex flex-col items-center gap-2">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
-          <span className="text-xs text-gray-500">Loading video...</span>
-        </div>
-      </div>
-    );
-  }
-
-  if (error || !videoUrl) {
-    return (
-      <div
-        className={cn(
-          "flex items-center justify-center bg-muted rounded-xl",
-          className
-        )}
-      >
-        <span className="text-sm text-gray-500">Failed to load video</span>
-      </div>
-    );
-  }
-
   return (
     <video
-      src={videoUrl}
+      src={video.cdnURL}
       controls
       className={cn("rounded-xl", className)}
       preload="metadata"
@@ -349,70 +248,7 @@ const ImageAttachment = ({
   image: Attachment;
   className?: string;
 }) => {
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-
-  const { accessToken } = useAppSelector((state) => state.auth);
-
-  useEffect(() => {
-    const fetchImage = async () => {
-      try {
-        const response = await fetch(
-          `${BACKEND_URL}/api/v1/server/media/stream?key=${image.s3Key}`,
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch image");
-        }
-
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        setImageUrl(url);
-        setLoading(false);
-      } catch (err) {
-        console.error("Error loading image:", err);
-        setError(true);
-        setLoading(false);
-      }
-    };
-
-    fetchImage();
-
-    // Cleanup blob URL
-    return () => {
-      if (imageUrl) {
-        URL.revokeObjectURL(imageUrl);
-      }
-    };
-  }, [image.s3Key]);
-
-  if (loading) {
-    return (
-      <div
-        className={cn("flex items-center justify-center bg-muted", className)}
-      >
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
-      </div>
-    );
-  }
-
-  if (error || !imageUrl) {
-    return (
-      <div
-        className={cn("flex items-center justify-center bg-muted", className)}
-      >
-        <span className="text-sm text-gray-500">Failed to load</span>
-      </div>
-    );
-  }
-
-  return <img src={imageUrl} alt={image.fileName} className={className} />;
+  return <img src={image.cdnURL} alt={image.fileName} className={className} />;
 };
 
 // --- Sub-Component: Image Grid ---
@@ -420,7 +256,6 @@ const ImageAttachmentGrid = ({ images }: { images: Attachment[] }) => {
   if (images.length === 0) return null;
 
   // Dynamic grid based on count (1 = full, 2 = half, 3+ = grid)
-  const { accessToken } = useAppSelector((state) => state.auth);
   const gridClass =
     images.length === 1
       ? "grid-cols-1 max-w-[300px]"
@@ -447,9 +282,7 @@ const ImageAttachmentGrid = ({ images }: { images: Attachment[] }) => {
               <Button
                 variant="secondary"
                 size="icon"
-                onClick={() =>
-                  downloadFile(img.s3Key, img.fileName, accessToken)
-                }
+                onClick={() => downloadFile(img.cdnURL, img.fileName)}
                 className="h-8 w-8 rounded-full"
               >
                 <Download className="h-4 w-4" />
@@ -464,7 +297,7 @@ const ImageAttachmentGrid = ({ images }: { images: Attachment[] }) => {
 
 const VideoAttachmentGrid = ({ videos }: { videos: Attachment[] }) => {
   if (videos.length === 0) return null;
-  const { accessToken } = useAppSelector((state) => state.auth);
+
   return (
     <div className="flex flex-col gap-2 mt-2 max-w-[500px]">
       {videos.map((vid) => (
@@ -480,9 +313,7 @@ const VideoAttachmentGrid = ({ videos }: { videos: Attachment[] }) => {
               className="h-8 w-8 rounded-full"
             >
               <Download
-                onClick={() =>
-                  downloadFile(vid.s3Key, vid.fileName, accessToken)
-                }
+                onClick={() => downloadFile(vid.cdnURL, vid.fileName)}
                 className="h-4 w-4"
               />
             </Button>
@@ -499,19 +330,22 @@ interface MessageAttachmentsProps {
   className?: string;
 }
 
-export function MessageAttachments({ attachments, className }: MessageAttachmentsProps) {
+export function MessageAttachments({
+  attachments,
+  className,
+}: MessageAttachmentsProps) {
   if (!attachments || attachments.length === 0) return null;
 
   // Separate Images from Files
   const images = attachments.filter(
-    (a) => a.mimeType.startsWith("image/") && a.s3Key.trim() !== ""
+    (a) => a.mimeType.startsWith("image/") && a.cdnURL.trim() !== ""
   );
   const videos = attachments.filter(
-    (a) => a.mimeType.startsWith("video/") && a.s3Key.trim() !== ""
+    (a) => a.mimeType.startsWith("video/") && a.cdnURL.trim() !== ""
   );
   const files = attachments.filter(
     (a) =>
-      a.s3Key.trim() === "" ||
+      a.cdnURL.trim() === "" ||
       (!a.mimeType.startsWith("image/") && !a.mimeType.startsWith("video/"))
   );
 

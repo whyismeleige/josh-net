@@ -1,7 +1,5 @@
 import { useServerContext } from "@/src/context/server.provider";
 import {
-  ImageIcon,
-  Laugh,
   Paperclip,
   Search,
   Send,
@@ -18,7 +16,7 @@ import {
 } from "@/src/ui/input-group";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/src/ui/tooltip";
 import { FileAttachmentViewer } from "../Josephine/input";
-import EmojiPicker, { EmojiStyle, Theme } from "emoji-picker-react";
+import { EmojiClickData, EmojiStyle } from "emoji-picker-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/ui/tabs";
 import { Grid } from "@giphy/react-components";
 import { GiphyFetch } from "@giphy/js-fetch-api";
@@ -31,13 +29,6 @@ interface AttachedFile {
   preview?: string;
   id: string;
 }
-
-const detectDeviceType = (userAgent: string): EmojiStyle => {
-  // Check for Apple devices
-  const isApple = /iphone|ipad|ipod|macintosh|mac os x/i.test(userAgent);
-
-  return isApple ? ("apple" as EmojiStyle) : ("google" as EmojiStyle);
-};
 
 export default function ServerInput() {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -215,7 +206,7 @@ export default function ServerInput() {
               <Sticker />
             </InputGroupButton>
           </TooltipTrigger>
-          <TooltipContent>GIF's, Stickers, Emojis</TooltipContent>
+          <TooltipContent>GIF&apos;s, Stickers, Emojis</TooltipContent>
         </Tooltip>
         <InputGroupTextarea
           placeholder="Enter your Message"
@@ -286,7 +277,6 @@ function MediaKeyboard({
   onClose,
 }: MediaKeyboardProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const { theme } = useTheme();
 
   const fetchGifs = (offset: number) => {
     if (searchTerm) {
@@ -301,7 +291,7 @@ function MediaKeyboard({
     onInsertGif(gifUrl);
   };
 
-  const onEmojiClick = (emojiObject: any) => {
+  const onEmojiClick = (emojiObject: EmojiClickData, event: MouseEvent) => {
     onInsertEmoji(emojiObject.emoji);
   };
 

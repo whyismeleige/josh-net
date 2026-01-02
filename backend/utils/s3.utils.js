@@ -4,6 +4,7 @@ const s3Client = require("../config/s3.config");
 
 const BUCKET_NAME = process.env.S3_BUCKET_NAME;
 const AWS_REGION = process.env.AWS_REGION;
+const CDN_URL = process.env.CDN_URL;
 
 async function s3URLToPDFBase64(key) {
   try {
@@ -42,8 +43,9 @@ async function uploadS3File(key, fileBuffer) {
       Body: fileBuffer,
     });
     await s3Client.send(command);
-    const fileUrl = `https://${BUCKET_NAME}.s3.${AWS_REGION}.amazonaws.com/${key}`;
-    return fileUrl;
+    const s3URL = `https://${BUCKET_NAME}.s3.${AWS_REGION}.amazonaws.com/${key}`;
+    const cdnURL = `${CDN_URL}/${key}`;
+    return { s3URL, cdnURL };
   } catch (error) {
     console.error("Error in uploading file", error);
     throw error;

@@ -19,14 +19,12 @@ module.exports = (io, socket) => {
     socket.leave(userId.toString());
   });
 
-  socket.on("join-channel", async (channelId, userId) => {
+  socket.on("join-channel", async (channelId) => {
     socket.join(channelId);
-    console.log(`User ${userId} join Channel ${channelId}`);
   });
 
   socket.on("leave-channel", async (channelId, userId) => {
     socket.leave(channelId);
-    console.log(`User ${userId} left channel ${channelId}`);
   });
 
   socket.on("typing", async (channelId, userId, userName) => {

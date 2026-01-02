@@ -115,9 +115,11 @@ export default function Header(props: { scrollTo: (key: string) => void }) {
                 })}
                 <div className="border-t border-gray-200/50 dark:border-gray-800/50 pt-4 pb-2">
                   <div className="flex space-x-2">
-                    <Button className="flex-1">Login</Button>
-                    <Button variant="outline" className="flex-1">
-                      SignUp
+                    <Button>
+                      <Link href="/auth?view=Login">Login</Link>
+                    </Button>
+                    <Button variant="outline">
+                      <Link href="/auth?view=Sign Up">Sign Up</Link>
                     </Button>
                   </div>
                 </div>

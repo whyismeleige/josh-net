@@ -22,6 +22,8 @@ import useGoogleAuth from "@/src/hooks/useGoogleAuth";
 import { ForgetPasswordDialog } from "../../shared/Forget-Password/ForgetPassword";
 import { LocalAuthResponse, Mode } from "@/src/types/auth.types";
 import Link from "next/link";
+import { PrivacyPolicyDialog } from "./privacy-dialog";
+import { TermsOfServiceDialog } from "./terms-of-service-dialog";
 
 export default function AuthPage() {
   const searchParams = useSearchParams();
@@ -221,8 +223,8 @@ export default function AuthPage() {
                   </FieldDescription>
                   <FieldDescription className="px-6 text-center">
                     By clicking continue, you agree to our{" "}
-                    <a href="#">Terms of Service</a> and{" "}
-                    <a href="#">Privacy Policy</a>.
+                    <TermsOfServiceDialog/> and{" "}
+                    <PrivacyPolicyDialog/>
                   </FieldDescription>
                 </Field>
               </FieldGroup>

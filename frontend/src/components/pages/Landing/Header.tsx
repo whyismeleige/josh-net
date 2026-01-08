@@ -17,9 +17,9 @@ const components = [
   {
     name: "Highlights",
   },
-  {
-    name: "Blog",
-  },
+  // {
+  //   name: "Blog",
+  // },
   {
     name: "FAQ",
   },

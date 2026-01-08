@@ -1,6 +1,7 @@
-import * as React from "react";
+import { useTheme } from "next-themes";
 
 export default function Hero() {
+  const theme = useTheme();
   return (
     <section id="hero">
       <div className="container mx-auto px-4 flex flex-col items-center pt-28 pb-8 sm:pt-35 sm:pb-12">
@@ -18,19 +19,11 @@ export default function Hero() {
           </p>
         </div>
 
-        <div
+        <img
           id="image"
+          src="/socials.jpeg"
           className="self-center w-full h-96 sm:h-[700px] mt-8 sm:mt-10 rounded-lg border border-gray-200 dark:border-gray-700 bg-cover bg-center shadow-lg"
-          style={{
-            backgroundImage: `url("desktop-image.png")`,
-            outline: "6px solid hsla(220, 25%, 80%, 0.2)",
-            boxShadow: "0 0 12px 8px hsla(220, 25%, 80%, 0.2)",
-          }}
-          data-dark-style={{
-            backgroundImage: `url("tab-image.png")`,
-            outline: "6px solid hsla(220, 20%, 42%, 0.1)",
-            boxShadow: "0 0 24px 12px hsla(210, 100%, 25%, 0.2)",
-          }}
+          
         />
       </div>
 

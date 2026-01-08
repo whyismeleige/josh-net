@@ -40,7 +40,7 @@ module.exports = (io, socket) => {
                 if (err) reject(err);
                 const buffer = fs.readFileSync(data.newPath);
 
-                const s3Key = `${serverId ? $`{serverId}/` : ""}${channelId}/${
+                const s3Key = `${serverId ? `${serverId}/` : ""}${channelId}/${
                   newMessage._id
                 }/${attachmentId}-${data.name}`;
 

@@ -50,7 +50,7 @@ export default function Landing() {
         <Hero />
         <Features setRef={setRef}/>
         <Highlights setRef={setRef}/>
-        <Blog setRef={setRef}/>
+        {/* <Blog setRef={setRef}/> */}
         <FAQ setRef={setRef}/>
         <Footer/>
       </div>

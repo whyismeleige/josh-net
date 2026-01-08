@@ -1,7 +1,7 @@
-import { useTheme } from "next-themes";
+import { useTheme, UseThemeProps } from "next-themes";
 
 export default function Hero() {
-  const theme = useTheme();
+  const {theme} = useTheme();
   return (
     <section id="hero">
       <div className="container mx-auto px-4 flex flex-col items-center pt-28 pb-8 sm:pt-35 sm:pb-12">
@@ -21,9 +21,8 @@ export default function Hero() {
 
         <img
           id="image"
-          src="/socials.jpeg"
+          src={theme === "dark" ? "/dark-servers.png" : "/light-servers.png"}
           className="self-center w-full h-96 sm:h-[700px] mt-8 sm:mt-10 rounded-lg border border-gray-200 dark:border-gray-700 bg-cover bg-center shadow-lg"
-          
         />
       </div>
 

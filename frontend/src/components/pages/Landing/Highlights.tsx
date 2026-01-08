@@ -1,50 +1,50 @@
 import * as React from "react";
 import { Card, CardContent } from "@/src/ui/card";
 import { 
-  Settings, 
-  Wrench, 
-  ThumbsUp, 
-  Sparkles, 
-  Headphones, 
-  BarChart3 
+  BookOpen, 
+  Bot, 
+  Users, 
+  TrendingUp, 
+  MessageSquare, 
+  Shield 
 } from "lucide-react";
 
 const items = [
   {
-    icon: <Settings className="w-6 h-6" />,
-    title: "Swift response system",
+    icon: <BookOpen className="w-6 h-6" />,
+    title: "Centralized Academic Hub",
     description:
-      "Handle travel-related incidents with speed and accuracy, minimizing disruption and ensuring safety.",
+      "Access all study materials, lecture notes, and exam papers in one organized platform with seamless cloud storage.",
   },
   {
-    icon: <Wrench className="w-6 h-6" />,
-    title: "Robust reliability",
+    icon: <Bot className="w-6 h-6" />,
+    title: "AI-Powered Assistance",
     description:
-      "Rely on a system designed to perform under pressure, offering dependable protection during unexpected events.",
+      "Get instant help from Josephine AI chatbot for academic queries with document analysis and context-aware responses.",
   },
   {
-    icon: <ThumbsUp className="w-6 h-6" />,
-    title: "Traveler-focused design",
+    icon: <Users className="w-6 h-6" />,
+    title: "Real-Time Collaboration",
     description:
-      "Enjoy a streamlined experience built with travelers in mind, simplifying reporting and assistance at every step.",
+      "Connect with classmates through servers and channels, share resources, and collaborate on projects effortlessly.",
   },
   {
-    icon: <Sparkles className="w-6 h-6" />,
-    title: "Innovative safety features",
+    icon: <TrendingUp className="w-6 h-6" />,
+    title: "Performance Analytics",
     description:
-      "Benefit from advanced monitoring, real-time alerts, and predictive tools that set new standards in travel security.",
+      "Track attendance, monitor exam results, and visualize your academic progress with detailed insights and trends.",
   },
   {
-    icon: <Headphones className="w-6 h-6" />,
-    title: "Dedicated support network",
+    icon: <MessageSquare className="w-6 h-6" />,
+    title: "Instant Communication",
     description:
-      "Access 24/7 assistance and guidance, ensuring help is always within reach, no matter where you are.",
+      "Experience WebSocket-based real-time messaging with file sharing, reactions, and organized conversation threads.",
   },
   {
-    icon: <BarChart3 className="w-6 h-6" />,
-    title: "Precision-driven coordination",
+    icon: <Shield className="w-6 h-6" />,
+    title: "Secure & Reliable",
     description:
-      "Experience a system where every detail from alerts to resolution, is fine-tuned for maximum impact and efficiency.",
+      "Built with JWT authentication, secure file storage, and robust data protection to keep your information safe.",
   },
 ];
 
@@ -65,10 +65,9 @@ export default function Highlights({ setRef }: HighlightsProps) {
               Highlights
             </h2>
             <p className="text-sm sm:text-base md:text-lg text-muted-foreground leading-relaxed max-w-none md:max-w-4xl mx-auto">
-              Discover how Sentinel Travel ensures safety, reliability, and
-              seamless support for every traveler. Built on trust, speed, and
-              precision, it delivers peace of mind wherever your journey takes
-              you.
+              Discover how JOSH-Net transforms your academic experience with 
+              intelligent resource management, AI-powered assistance, and seamless 
+              collaboration tools designed specifically for St. Joseph's College students.
             </p>
           </div>
           <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">

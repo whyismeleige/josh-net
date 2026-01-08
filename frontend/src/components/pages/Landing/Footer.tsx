@@ -14,12 +14,7 @@ export default function Footer() {
           </div>
         </a>
 
-        <div className="flex items-center gap-5 whitespace-nowrap">
-          <a href="#">About</a>
-          <a href="#">Features</a>
-          <a href="#">Works</a>
-          <a href="#">Career</a>
-        </div>
+        
 
         <div className="flex items-center gap-4">
           <a href="https://github.com/whyismeleige/josh-net">

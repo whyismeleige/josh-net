@@ -18,6 +18,8 @@ const crypto = require("crypto");
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 
+const { ValidationError, NotFoundError } = require("../utils/errors.utils");
+
 const db = require("../models");
 const redisClient = require("../database/redis");
 const sendEmail = require("../services/email.service");
@@ -53,75 +55,61 @@ const OTP = db.otp;
  * @returns {Object} 500 - Server error
  */
 
-exports.register = async (req, res) => {
-  try {
-    const { name, email, password, role = "student" } = req.body;
+exports.register = asyncHandler(async (req, res) => {
+  const { name, email, password, role = "student" } = req.body;
 
-    // Validate required fields
-    if (!name || !email || !password) {
-      return res.status(400).send({
-        message: "Enter Valid Input",
-        type: "error",
-      });
-    }
-
-    // Check if user already exists to prevent duplicate registrations
-    const userExists = await User.findOne({ email });
-
-    if (userExists) {
-      return res.status(400).send({
-        message: "User already exists",
-        type: "error",
-      });
-    }
-
-    // Extract request metadata (IP, user agent, etc) for security tracking
-    const metadata = getMetaData(req);
-
-    // Create new user with local provider
-    // Password will be hashed by pre-save hook in User model
-    const newUser = await User.create({
-      email,
-      name,
-      password,
-      role,
-      academic: {
-        course: "BBA - IT",
-        currentSemester: "Semester - V",
-        year: "R23",
-      },
-      providers: ["local"],
-      activity: {
-        totalLogins: [
-          {
-            metadata,
-          },
-        ],
-      },
-    });
-
-    // Generate JWT Tokens for immediate authentication
-    const accessToken = createAccessToken({ id: newUser._id, role });
-    const refreshToken = createRefreshToken({ id: newUser._id, role });
-
-    // Store refresh token for session management
-    await newUser.saveToken(refreshToken, metadata);
-
-    res.status(200).send({
-      message: "User registered successfully",
-      type: "success",
-      user: sanitizeUser(newUser), // Remove sensitive fields before sending
-      accessToken,
-      refreshToken,
-    });
-  } catch (error) {
-    console.error("Error while Registering User", error.message);
-    res.status(500).send({
-      message: error.message || "Server Error",
-      type: "error",
-    });
+  // Validate required fields
+  if (!name || !email || !password) {
+    throw new ValidationError("All fields are required");
   }
-};
+
+  // Check if user already exists to prevent duplicate registrations
+  const userExists = await User.findOne({ email });
+
+  if (userExists) {
+    throw new ValidationError("User already exists");
+  }
+
+  // Extract request metadata (IP, user agent, etc) for security tracking
+  const metadata = getMetaData(req);
+
+  // Create new user with local provider
+  // Password will be hashed by pre-save hook in User model
+  const newUser = await User.create({
+    email,
+    name,
+    password,
+    role,
+    academic: {
+      course: "BBA - IT",
+      currentSemester: "Semester - V",
+      year: "R23",
+    },
+    providers: ["local"],
+    activity: {
+      totalLogins: [
+        {
+          metadata,
+        },
+      ],
+    },
+  });
+
+  // Generate JWT Tokens for immediate authentication
+  const accessToken = createAccessToken({ id: newUser._id, role });
+  const refreshToken = createRefreshToken({ id: newUser._id, role });
+
+  // Store refresh token for session management
+  await newUser.saveToken(refreshToken, metadata);
+
+  res.status(200).send({
+    message: "User registered successfully",
+    type: "success",
+    user: sanitizeUser(newUser), // Remove sensitive fields before sending
+    accessToken,
+    refreshToken,
+  });
+});
 
 /**
  * Login Existing User (Local Auth Provider)
@@ -144,111 +132,92 @@ exports.register = async (req, res) => {
  * @returns {Object} 500 - Server error
  */
 
-exports.login = async (req, res) => {
-  try {
-    const { email, password } = req.body;
+exports.login = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).send({
-        message: "Enter Valid Input",
-        type: "error",
-      });
-    }
+  if (!email || !password) {
+    throw new ValidationError("All fields are required");
+  }
 
-    const metadata = getMetaData(req);
+  const metadata = getMetaData(req);
 
-    // Explicitly select password field (excluded by default in schema)
-    const userExists = await User.findOne({ email }).select("+password");
+  // Explicitly select password field (excluded by default in schema)
+  const userExists = await User.findOne({ email }).select("+password");
 
-    if (!userExists) {
-      return res.status(400).send({
-        message: "User does not exist. Please Register",
-        type: "error",
-      });
-    }
+  if (!userExists) {
+    throw new ValidationError("User does not exist. Please Register");
+  }
 
-    // Check if account is locked due to failed login attempts
-    if (userExists.isLocked()) {
-      const minutesLeft = Math.ceil(
-        (userExists.security.lockUntil - Date.now()) / (1000 * 60)
-      );
-      return res.status(400).send({
-        message: `Account is Locked, \nDue to Repeated Incorrect Login Attempts,\nTry after ${minutesLeft}  minutes`,
-        type: "error",
-      });
-    }
+  // Check if account is locked due to failed login attempts
+  if (userExists.isLocked()) {
+    const minutesLeft = Math.ceil(
+      (userExists.security.lockUntil - Date.now()) / (1000 * 60),
+    );
+    throw new ValidationError(
+      `Account is Locked, \nDue to Repeated Incorrect Login Attempts,\nTry after ${minutesLeft}  minutes`,
+    );
+  }
 
-    if (!userExists.password) {
-      return res.status(400).send({
-        message: "Please Authenticate with Gmail",
-        type: "error",
-      });
-    }
+  if (!userExists.password) {
+    throw new ValidationError(
+      "No Password Set for this Account. \nPlease Authenticate with Gmail",
+    );
+  }
 
-    const passwordsMatch = await userExists.passwordsMatch(password);
+  const passwordsMatch = await userExists.passwordsMatch(password);
 
-    if (!passwordsMatch) {
-      // Track failed login attempt (may trigger account lock)
-      await userExists.inSuccessfulLogin();
-      return res.status(400).send({
-        message: "Passwords do not match",
-        type: "error",
-      });
-    }
+  if (!passwordsMatch) {
+    // Track failed login attempt (may trigger account lock)
+    await userExists.inSuccessfulLogin();
+    throw new ValidationError("Passwords do not match");
+  }
 
-    // Handle two-factor authentication if enabled
-    if (userExists.security.twoFactorEnabled) {
-      const { verificationId, otp } = await OTP.createVerification(
-        userExists._id,
-        "two_factor_auth"
-      );
-      sendEmail(
-        email,
-        "Two Factor Authentication",
-        `
+  // Handle two-factor authentication if enabled
+  if (userExists.security.twoFactorEnabled) {
+    const { verificationId, otp } = await OTP.createVerification(
+      userExists._id,
+      "two_factor_auth",
+    );
+    sendEmail(
+      email,
+      "Two Factor Authentication",
+      `
           <p>Hey ${userExists.name},</p>
           <p>Kindly verify the following OTP below in the app, OTP will expire in 5 minutes: </p>
           <p>${otp}</p>
           <p>Thank you</p>
-        `
-      );
-      // Return verification ID for OTP validation in next step
-      return res.status(200).send({
-        message: "OTP sent successfully to your email",
-        type: "success",
-        verificationId,
-      });
-    }
-
-    // Generate Tokens for authenticated session
-    const accessToken = createAccessToken({
-      id: userExists._id,
-      role: userExists.role,
-    });
-    const refreshToken = createRefreshToken({
-      id: userExists._id,
-      role: userExists.role,
-    });
-
-    // Update login tracking and store refresh token
-    await userExists.successfulLogin(metadata);
-    await userExists.saveToken(refreshToken, metadata);
-
-    res.status(200).send({
-      message: "User Logged In Successfully",
+        `,
+    );
+    // Return verification ID for OTP validation in next step
+    return res.status(200).send({
+      message: "OTP sent successfully to your email",
       type: "success",
-      user: sanitizeUser(userExists),
-      accessToken,
-      refreshToken,
-    });
-  } catch (error) {
-    console.error("Error while User Logging in", error.message);
-    res.status(500).send({
-      message: error.message || "Server Error",
-      type: "error",
+      verificationId,
     });
   }
-};
+
+  // Generate Tokens for authenticated session
+  const accessToken = createAccessToken({
+    id: userExists._id,
+    role: userExists.role,
+  });
+  const refreshToken = createRefreshToken({
+    id: userExists._id,
+    role: userExists.role,
+  });
+
+  // Update login tracking and store refresh token
+  await userExists.successfulLogin(metadata);
+  await userExists.saveToken(refreshToken, metadata);
+
+  res.status(200).send({
+    message: "User Logged In Successfully",
+    type: "success",
+    user: sanitizeUser(userExists),
+    accessToken,
+    refreshToken,
+  });
+});
 
 /**
  * Send OTP for various verification purposes
@@ -272,116 +241,93 @@ exports.login = async (req, res) => {
  * @returns {Object} 500 - Server error
  */
 
-exports.sendOTP = async (req, res) => {
-  try {
-    const { purpose } = req.body;
+exports.sendOTP = asyncHandler(async (req, res) => {
+  const { purpose } = req.body;
 
-    if (!purpose) {
-      return res.status(400).send({
-        message: "Purpose is required",
-        type: "error",
-      });
-    }
+  if (!purpose) {
+    throw new ValidationError("Purpose is required");
+  }
 
-    const validPurposes = [
-      "email_verification",
-      "sms_verification",
-      "password_reset",
-      "two_factor_auth",
-    ];
+  const validPurposes = [
+    "email_verification",
+    "sms_verification",
+    "password_reset",
+    "two_factor_auth",
+  ];
 
-    if (!validPurposes.includes(purpose)) {
-      return res.status(400).send({
-        message: "Invalid purpose. Must be one of: " + validPurposes.join(", "),
-        type: "error",
-      });
-    }
-
-    // Validate required fields based on purpose
-    if (purpose === "email_verification" && !req.body.email) {
-      return res.status(400).send({
-        message: "Email is required for email_verification",
-        type: "error",
-      });
-    }
-
-    if (purpose === "sms_verification" && !req.body.number) {
-      return res.status(400).send({
-        message: "Phone number is required for sms_verification",
-        type: "error",
-      });
-    }
-
-    if (
-      (purpose === "password_reset" || purpose === "two_factor_auth") &&
-      !req.body.email &&
-      !req.body.number
-    ) {
-      return res.status(400).send({
-        message: "Email or phone number is required",
-        type: "error",
-      });
-    }
-
-    const conditions = [];
-
-    if (req.body?.email) {
-      conditions.push({ email: req.body.email });
-    }
-
-    if (req.body?.number) {
-      conditions.push({ phone: req.body.number });
-    }
-
-    if (conditions.length === 0) {
-      // Handle case where neither email nor number provided
-      return res
-        .status(400)
-        .send({ message: "Email or phone required", type: "error" });
-    }
-
-    // Find user by email or phone number
-    const user = await User.findOne({
-      $or: conditions,
+  if (!validPurposes.includes(purpose)) {
+    return res.status(400).send({
+      message: "Invalid purpose. Must be one of: " + validPurposes.join(", "),
+      type: "error",
     });
+  }
 
-    if (!user) {
-      return res.status(400).send({
-        message: "User does not exist",
-        type: "error",
-      });
-    }
+  // Validate required fields based on purpose
+  if (purpose === "email_verification" && !req.body.email) {
+    throw new ValidationError("Email is required for email_verification");
+  }
 
-    // Generate OTP and store in database with expiration
-    const { verificationId, otp } = await OTP.createVerification(
-      user._id,
-      purpose
-    );
+  if (purpose === "sms_verification" && !req.body.number) {
+    throw new ValidationError("Phone number is required for sms_verification");
+  }
 
-    sendEmail(
-      req.body.email,
-      "Two Factor Authentication",
-      `
+  if (
+    (purpose === "password_reset" || purpose === "two_factor_auth") &&
+    !req.body.email &&
+    !req.body.number
+  ) {
+    throw new ValidationError("Email or phone number is required");
+  }
+
+  const conditions = [];
+
+  if (req.body?.email) {
+    conditions.push({ email: req.body.email });
+  }
+
+  if (req.body?.number) {
+    conditions.push({ phone: req.body.number });
+  }
+
+  if (conditions.length === 0) {
+    // Handle case where neither email nor number provided
+    return res
+      .status(400)
+      .send({ message: "Email or phone required", type: "error" });
+  }
+
+  // Find user by email or phone number
+  const user = await User.findOne({
+    $or: conditions,
+  });
+
+  if (!user) {
+    throw new NotFoundError("User does not exist");
+  }
+
+  // Generate OTP and store in database with expiration
+  const { verificationId, otp } = await OTP.createVerification(
+    user._id,
+    purpose,
+  );
+
+  sendEmail(
+    req.body.email,
+    "Two Factor Authentication",
+    `
           <p>Hey ${user.name},</p>
           <p>Kindly verify the following OTP below in the app, OTP will expire in 5 minutes: </p>
           <p>${otp}</p>
           <p>Thank you</p>
-        `
-    );
+        `,
+  );
 
-    return res.status(200).send({
-      message: "OTP sent successfully to your Email",
-      type: "success",
-      verificationId, // Client needs this to verify OTP
-    });
-  } catch (error) {
-    console.error("Error in Sending OTP", error.message);
-    res.status(500).send({
-      message: error.message || "Server Error",
-      type: "error",
-    });
-  }
-};
+  return res.status(200).send({
+    message: "OTP sent successfully to your Email",
+    type: "success",
+    verificationId, // Client needs this to verify OTP
+  });
+});
 
 /**
  * Verify OTP and complete authentication/verification flow
@@ -406,87 +352,70 @@ exports.sendOTP = async (req, res) => {
  * @returns {Object} 500 - Server error
  */
 
-exports.verifyOTP = async (req, res) => {
-  try {
-    const { verificationId, otp } = req.body;
+exports.verifyOTP = asyncHandler(async (req, res) => {
+  const { verificationId, otp } = req.body;
 
-    // Validate Inputs
-    if (!verificationId || !otp) {
-      return res.status(400).send({
-        message: "Input Validation",
-        type: "error",
-      });
-    }
+  // Validate Inputs
+  if (!verificationId || !otp) {
+    throw new ValidationError("All fields are required");
+  }
 
-    // OTP Verification done in OTP Model
-    const { user_id, purpose } = await OTP.verifyOTP(verificationId, otp);
+  // OTP Verification done in OTP Model
+  const { user_id, purpose } = await OTP.verifyOTP(verificationId, otp);
 
-    // Delete Session after Finding it
-    await OTP.findByIdAndDelete(verificationId);
+  // Delete Session after Finding it
+  await OTP.findByIdAndDelete(verificationId);
 
-    const user = await User.findById(user_id);
+  const user = await User.findById(user_id);
 
-    // Verification Flow According to Purpose of Verification
-    if (purpose === "email_verification") {
-      user.security.emailVerified = true;
-      await user.save();
-    }
+  // Verification Flow According to Purpose of Verification
+  if (purpose === "email_verification") {
+    user.security.emailVerified = true;
+    await user.save();
+  }
 
-    if (purpose === "sms_verification") {
-      user.security.numberVerified = true;
-      await user.save();
-    }
+  if (purpose === "sms_verification") {
+    user.security.numberVerified = true;
+    await user.save();
+  }
 
-    // Login Authentication Success
-    if (purpose === "two_factor_auth") {
-      const metadata = getMetaData(req);
-      const accessToken = createAccessToken({
-        id: user._id,
-        role: user.role,
-      });
-      const refreshToken = createRefreshToken({
-        id: user._id,
-        role: user.role,
-      });
-
-      await user.successfulLogin(metadata);
-      await user.saveToken(refreshToken, metadata);
-
-      return res.status(200).send({
-        message: "User Logged In Successfully",
-        type: "success",
-        user: sanitizeUser(user),
-        accessToken,
-        refreshToken,
-      });
-    }
-
-    if (purpose === "password_reset") {
-      return res.status(200).send({
-        message: "OTP Successfully Verified",
-        type: "success",
-        userId: user._id,
-      });
-    }
-
-    res.status(200).send({
-      message: "OTP Successfully Verified",
-      type: "success",
+  // Login Authentication Success
+  if (purpose === "two_factor_auth") {
+    const metadata = getMetaData(req);
+    const accessToken = createAccessToken({
+      id: user._id,
+      role: user.role,
     });
-  } catch (error) {
-    console.error("Error while verifying", error.message);
+    const refreshToken = createRefreshToken({
+      id: user._id,
+      role: user.role,
+    });
 
-    const statusCode = error.message.includes("Maximum")
-      ? 429
-      : error.message.includes("expired")
-      ? 400
-      : 500;
-    res.status(statusCode).send({
-      message: error.message || "Server Error",
-      type: "error",
+    await user.successfulLogin(metadata);
+    await user.saveToken(refreshToken, metadata);
+
+    return res.status(200).send({
+      message: "User Logged In Successfully",
+      type: "success",
+      user: sanitizeUser(user),
+      accessToken,
+      refreshToken,
     });
   }
-};
+
+  if (purpose === "password_reset") {
+    return res.status(200).send({
+      message: "OTP Successfully Verified",
+      type: "success",
+      userId: user._id,
+    });
+  }
+
+  res.status(200).send({
+    message: "OTP Successfully Verified",
+    type: "success",
+  });
+});
 
 /**
  * Change Password Flow
@@ -512,129 +441,82 @@ exports.verifyOTP = async (req, res) => {
  * @todo Add middleware to verify recent OTP/authentication before allowing password change
  */
 
-exports.changePassword = async (req, res) => {
-  try {
-    const { userId, newPassword } = req.body;
+exports.changePassword = asyncHandler(async (req, res) => {
+  const { userId, newPassword } = req.body;
 
-    if (!userId || !newPassword) {
-      return res.status(400).send({
-        message: "Input Invalid",
-        type: "error",
-      });
-    }
-
-    const user = await User.findById(userId);
-
-    if (!user) {
-      return res.status(400).send({
-        message: "User does not exist",
-        type: "error",
-      });
-    }
-
-    // changePassword
-    await user.changePassword(newPassword);
-
-    res.status(200).send({
-      message: "Password Changed Successfully",
-      type: "success",
-    });
-  } catch (error) {
-    console.error("Error while Changing Password", error.message);
-    res.status(500).send({
-      message: error.message || "Server Error",
-      type: "error",
-    });
+  if (!userId || !newPassword) {
+    throw new ValidationError("All fields are required");
   }
-};
 
-exports.refreshToken = async (req, res) => {
-  try {
-    const { refreshToken } = req.body;
+  const user = await User.findById(userId);
 
-    if (!refreshToken) {
-      return res.status(401).send({
-        message: "Unauthorized Access",
-        type: "error",
-      });
-    }
-
-    const decoded = decodeRefreshToken(refreshToken);
-
-    const user = await User.findById(decoded.id);
-
-    if (!user) {
-      return res.status(401).send({
-        message: "User not found",
-        type: "error",
-      });
-    }
-
-    const tokenExists = user.refreshTokens.some(
-      (tokenObj) => tokenObj.token === refreshToken
-    );
-
-    if (!tokenExists) {
-      return res.status(401).send({
-        message: "Invalid Refresh Token",
-        type: "error",
-      });
-    }
-
-    const accessToken = createAccessToken({ id: user._id, role: user.role });
-
-    res.status(200).json({
-      message: "Token Changed",
-      type: "success",
-      accessToken,
-    });
-  } catch (error) {
-    console.error("Refresh Token error", error);
-    res.status(403).send({ message: "Invalid Refresh Token", type: "error" });
+  if (!user) {
+    throw new NotFoundError("User does not exist");
   }
-};
 
-exports.getProfile = async (req, res) => {
-  try {
-    res.status(200).send({
-      user: sanitizeUser(req.user),
-      message: "User Profile Sent",
-      type: "success",
-    });
-  } catch (error) {
-    console.error("This is the error", error);
-    res.status(500).send({
-      message: "Error fetching User Data",
-      type: "error",
-    });
+  // changePassword
+  await user.changePassword(newPassword);
+
+  res.status(200).send({
+    message: "Password Changed Successfully",
+    type: "success",
+  });
+});
+
+exports.refreshToken = asyncHandler(async (req, res) => {
+  const { refreshToken } = req.body;
+
+  if (!refreshToken) {
+    throw new AuthorizationError("Refresh Token is required");
   }
-};
 
-exports.logout = async (req, res) => {
-  try {
-    const { refreshToken } = req.body;
-    if (!refreshToken) {
-      return res.status(400).send({
-        messsage: "Unauthorized Access",
-        type: "error",
-      });
-    }
-    await User.findByIdAndUpdate(req.user._id, {
-      $pull: { refreshTokens: { token: refreshToken } },
-    });
+  const decoded = decodeRefreshToken(refreshToken);
 
-    res.status(200).send({
-      message: "Logged Out Successfully",
-      type: "success",
-    });
-  } catch (error) {
-    console.error("Logout Error: ", error);
-    res.status(500).send({
-      message: "Server Error",
-      type: "error",
-    });
+  const user = await User.findById(decoded.id);
+
+  if (!user) {
+    throw new NotFoundError("User not found");
   }
-};
+
+  const tokenExists = user.refreshTokens.some(
+    (tokenObj) => tokenObj.token === refreshToken,
+  );
+
+  if (!tokenExists) {
+    throw new AuthorizationError("Invalid Refresh Token");
+  }
+
+  const accessToken = createAccessToken({ id: user._id, role: user.role });
+
+  res.status(200).json({
+    message: "Token Changed",
+    type: "success",
+    accessToken,
+  });
+});
+
+exports.getProfile = asyncHandler(async (req, res) => {
+  res.status(200).send({
+    user: sanitizeUser(req.user),
+    message: "User Profile Sent",
+    type: "success",
+  });
+});
+
+exports.logout = asyncHandler(async (req, res) => {
+  const { refreshToken } = req.body;
+  if (!refreshToken) {
+    throw new ValidationError("Refresh Token is required");
+  }
+  await User.findByIdAndUpdate(req.user._id, {
+    $pull: { refreshTokens: { token: refreshToken } },
+  });
+
+  res.status(200).send({
+    message: "Logged Out Successfully",
+    type: "success",
+  });
+});
 
 /**
  * Logout of all devices
@@ -652,24 +534,16 @@ exports.logout = async (req, res) => {
  * @returns {Object} 500 - Server Error
  */
 
-exports.logoutAll = async (req, res) => {
-  try {
-    await User.findByIdAndUpdate(req.user._id, {
-      $set: { refreshTokens: [] },
-    });
+exports.logoutAll = asyncHandler(async (req, res) => {
+  await User.findByIdAndUpdate(req.user._id, {
+    $set: { refreshTokens: [] },
+  });
 
-    res.status(200).send({
-      message: "Logged out from all devices",
-      type: "success",
-    });
-  } catch (error) {
-    console.error("Logout all devices error:", error);
-    res.status(500).send({
-      message: "Server Error",
-      type: "error",
-    });
-  }
-};
+  res.status(200).send({
+    message: "Logged out from all devices",
+    type: "success",
+  });
+});
 
 // Google Authentication Provider
 passport.use(
@@ -716,8 +590,8 @@ passport.use(
         console.error("Google OAuth Error", error);
         return done(error, null);
       }
-    }
-  )
+    },
+  ),
 );
 
 exports.googleAuth = passport.authenticate("google", {
@@ -730,13 +604,13 @@ exports.googleCallback = (req, res, next) => {
     try {
       if (err) {
         return res.redirect(
-          `${process.env.FRONTEND_URL}/auth/error?message=Authentication-Failed`
+          `${process.env.FRONTEND_URL}/auth/error?message=Authentication-Failed`,
         );
       }
 
       if (!user) {
         return res.redirect(
-          `${process.env.FRONTEND_URL}/auth/error?message=User-not-found`
+          `${process.env.FRONTEND_URL}/auth/error?message=User-not-found`,
         );
       }
 
@@ -762,11 +636,11 @@ exports.googleCallback = (req, res, next) => {
       await redisClient.setEx(
         `auth:${tempCode}`,
         300,
-        JSON.stringify(authData)
+        JSON.stringify(authData),
       );
 
       res.redirect(
-        `${process.env.FRONTEND_URL}/auth/callback?code=${tempCode}`
+        `${process.env.FRONTEND_URL}/auth/callback?code=${tempCode}`,
       );
     } catch (error) {
       console.error("Error: Google Auth", error);
@@ -778,151 +652,106 @@ exports.googleCallback = (req, res, next) => {
   })(req, res, next);
 };
 
-exports.exchangeCode = async (req, res) => {
-  try {
-    const { code } = req.body;
-    if (!code) {
-      return res.status(400).send({
-        message: "Code is required",
-        type: "error",
-      });
-    }
-
-    const dataString = await redisClient.get(`auth:${code}`);
-
-    if (!dataString) {
-      return res.status(401).send({
-        message: "Invalid or Expired Code",
-        type: "error",
-      });
-    }
-
-    const authData = JSON.parse(dataString);
-
-    await redisClient.del(`auth:${code}`);
-
-    res.status(200).send({
-      message: "Successful Login",
-      type: "success",
-      user: authData.user,
-      accessToken: authData.accessToken,
-      refreshToken: authData.refreshToken,
-    });
-  } catch (error) {
-    console.error("Error in Exchanging Code", error);
-    res.status(500).send({
-      message: "Server Error",
-      type: "error",
-    });
+exports.exchangeCode = asyncHandler(async (req, res) => {
+  const { code } = req.body;
+  if (!code) {
+    throw new ValidationError("Code is required");
   }
-};
 
-exports.linkGoogleAccount = async (req, res) => {
-  try {
-    const userId = req.user._id;
-    const { googleAccessToken } = req.body;
+  const dataString = await redisClient.get(`auth:${code}`);
 
-    if (!googleAccessToken) {
-      return res.status(400).send({
-        message: "Validation Error, Try Again ",
-        type: "error",
-      });
-    }
+  if (!dataString) {
+    throw new ValidationError("Invalid or Expired Code");
+  }
 
-    const response = await fetch(
-      `https://www.googleapis.com/oauth2/v2/userinfo?access_token=${googleAccessToken}`
+  const authData = JSON.parse(dataString);
+
+  await redisClient.del(`auth:${code}`);
+
+  res.status(200).send({
+    message: "Successful Login",
+    type: "success",
+    user: authData.user,
+    accessToken: authData.accessToken,
+    refreshToken: authData.refreshToken,
+  });
+});
+
+exports.linkGoogleAccount = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+  const { googleAccessToken } = req.body;
+
+  if (!googleAccessToken) {
+    throw new ValidationError("Google Access Token is required");
+  }
+
+  const response = await fetch(
+    `https://www.googleapis.com/oauth2/v2/userinfo?access_token=${googleAccessToken}`,
+  );
+  const googleData = await response.json();
+
+  if (!googleData.id) {
+    throw new ValidationError("Invalid Google Token");
+  }
+
+  const email = googleData.email?.toLowerCase();
+
+  if (!email || !email.endsWith(`@josephscollege.ac.in`)) {
+    throw new ValidationError("Only St Joseph's College Email allowed");
+  }
+
+  const existingGoogleUser = await User.findOne({ googleID: googleData.id });
+
+  if (
+    existingGoogleUser &&
+    existingGoogleUser._id.toString() !== userId.toString()
+  ) {
+    throw new ValidationError(
+      "This Google Account is already linked to another user",
     );
-    const googleData = await response.json();
-
-    if (!googleData.id) {
-      return res.status(400).send({
-        message: "Invalid Google Token",
-        type: "error",
-      });
-    }
-
-    const email = googleData.email?.toLowerCase();
-
-    if (!email || !email.endsWith(`@josephscollege.ac.in`)) {
-      return res.status(400).send({
-        message: "Only St Joseph's College Email allowed",
-        type: "error",
-      });
-    }
-
-    const existingGoogleUser = await User.findOne({ googleID: googleData.id });
-
-    if (
-      existingGoogleUser &&
-      existingGoogleUser._id.toString() !== userId.toString()
-    ) {
-      return res.status(400).send({
-        message: "This Google Account is already linked to another user",
-        type: "error",
-      });
-    }
-
-    const user = await User.findById(userId);
-
-    if (user.email !== googleData.email.toLowerCase()) {
-      return res.status(400).send({
-        message: "Google Account email must match your current account email",
-        type: "error",
-      });
-    }
-
-    user.googleID = googleData.id;
-    user.providers = [...user.providers, "google"];
-
-    await user.save();
-
-    res.status(200).send({
-      message: "Google Account Linked Successfully",
-      type: "success",
-    });
-  } catch (error) {
-    console.error("Error Linking Google Account:", error);
-    res.status(500).send({
-      message: "Server Error",
-      type: "error",
-    });
   }
-};
 
-exports.unlinkGoogleAccount = async (req, res) => {
-  try {
-    const userId = req.user._id;
+  const user = await User.findById(userId);
 
-    const user = await User.findById(userId);
-
-    if (!user.googleID) {
-      return res.status(400).send({
-        message: "No Google Account Linked",
-        type: "error",
-      });
-    }
-
-    if (!user.password && user.authProvider !== "google") {
-      return res.status(400).send({
-        message: "Please set a password before unlinking Google Account",
-        type: "error",
-      });
-    }
-
-    user.googleID = undefined;
-    user.providers = ["local"];
-
-    await user.save();
-
-    res.status(200).send({
-      message: "Google Account unlinked successfully",
-      type: "success",
-    });
-  } catch (error) {
-    console.error("Error in Unlinking Google Account", error);
-    res.status(500).send({
-      message: "Server Error",
-      type: "error",
-    });
+  if (user.email !== googleData.email.toLowerCase()) {
+    throw new ValidationError(
+      "Google Account email must match your current account email",
+    );
   }
-};
+
+  user.googleID = googleData.id;
+  user.providers = [...user.providers, "google"];
+
+  await user.save();
+
+  res.status(200).send({
+    message: "Google Account Linked Successfully",
+    type: "success",
+  });
+});
+
+exports.unlinkGoogleAccount = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+
+  const user = await User.findById(userId);
+
+  if (!user.googleID) {
+    throw new ValidationError("No Google Account Linked");
+  }
+
+  if (!user.password && user.authProvider !== "google") {
+    throw new ValidationError(
+      "Please set a password before unlinking Google Account",
+    );
+  }
+
+  user.googleID = undefined;
+  user.providers = ["local"];
+
+  await user.save();
+
+  res.status(200).send({
+    message: "Google Account unlinked successfully",
+    type: "success",
+  });
+});

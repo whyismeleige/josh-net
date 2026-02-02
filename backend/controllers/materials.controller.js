@@ -16,42 +16,30 @@ const db = require("../models");
 const { Readable } = require("stream");
 const path = require("path");
 const archiver = require("archiver");
+const { ValidationError } = require("../utils/error.utils");
 
 const Material = db.material;
 
 const BUCKET_NAME = process.env.S3_BUCKET_NAME;
 
-exports.uploadSingle = async (req, res) => {
-  try {
-    if (!req.file) {
-      return res
-        .status(400)
-        .send({ message: "Error while Uploading File", type: "error" });
-    }
-
-    const data = req.body;
-
-    if (!data.userId) {
-      return res.status(400).send({
-        message: "User ID required",
-        type: "error",
-      });
-    }
-
-    await Material.createMaterial(data, req.file);
-
-    res.status(200).send({
-      message: "File Successfully Uploaded",
-      type: "success",
-    });
-  } catch (error) {
-    console.error("Upload Error", error);
-    res.status(500).send({
-      message: error.message || "Server Error",
-      type: "error",
-    });
+exports.uploadSingle = asyncHandler(async (req, res) => {
+  if (!req.file) {
+    throw new ValidationError("Error while uploading File");
   }
-};
+
+  const data = req.body;
+
+  if (!data.userId) {
+    throw new ValidationError("User Id is required");
+  }
+
+  await Material.createMaterial(data, req.file);
+
+  res.status(200).send({
+    message: "File Successfully Uploaded",
+    type: "success",
+  });
+});
 
 exports.uploadMultiple = async (req, res) => {
   try {
@@ -163,7 +151,7 @@ exports.downloadFolder = async (req, res) => {
         ...objects.map((obj) => ({
           ...obj,
           sourcePath: key,
-        }))
+        })),
       );
     }
 
@@ -172,11 +160,11 @@ exports.downloadFolder = async (req, res) => {
 
       res.setHeader(
         "Content-Type",
-        fileData.contentType || "application/octet-stream"
+        fileData.contentType || "application/octet-stream",
       );
       res.setHeader(
         "Content-Disposition",
-        `attachment; filename="${fileData.filename}"`
+        `attachment; filename="${fileData.filename}"`,
       );
 
       fileData.stream.pipe(res);
@@ -349,7 +337,7 @@ async function deleteS3Folder(folderPrefix) {
       new DeleteObjectCommand({
         Bucket: BUCKET_NAME,
         Key: folderPrefix,
-      })
+      }),
     );
     return;
   }
@@ -449,7 +437,7 @@ async function copyS3Folder(sourceFolder, destinationFolder, token) {
     sourceFolderKeys.forEach(async (sourceFolderKey) => {
       const destinationObjectKey = sourceFolderKey.replace(
         sourceFolder,
-        `${destinationFolder}/${sourcefolderName}`
+        `${destinationFolder}/${sourcefolderName}`,
       );
 
       const copyCommand = new CopyObjectCommand({
@@ -466,7 +454,7 @@ async function copyS3Folder(sourceFolder, destinationFolder, token) {
     await copyS3Folder(
       sourceFolder,
       destinationFolder,
-      list.NextContinuationToken
+      list.NextContinuationToken,
     );
 }
 
@@ -577,7 +565,7 @@ exports.getStudentCoursework = async (req, res) => {
     const coursework = await Material.getStudentCoursework(
       academic.course,
       academic.year,
-      "published"
+      "published",
     );
 
     res.status(200).send({

@@ -2,33 +2,16 @@ import express, { Application, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
 import dotenv from 'dotenv';
-import intializeSocket from './sockets';
 import connectDB from './database/connectDB';
 
 // Load environment variables
 dotenv.config();
 
-// Import routes
-import authRoutes from './routes/auth.routes';
-import studentRoutes from './routes/materials.routes';
-import serverRoutes from './routes/server.routes';
-import josephineRoutes from './routes/josephine.routes';
-import inboxRoutes from './routes/inbox.routes';
-
 // Create Express app
 const app: Application = express();
 
-// Create HTTP server
-const server = createServer(app);
-
-// Initialize Socket.IO
-const io = intializeSocket(server);
-
 // Server port
 const PORT: number = parseInt(process.env.PORT || '8080', 10);
-
-// Make Socket.IO available to routes
-app.set('io', io);
 
 // CORS configuration
 app.use(
@@ -44,13 +27,6 @@ app.use(express.urlencoded({ extended: true }));
 
 // Connect to database
 connectDB();
-
-// Register routes
-app.use('/api/v1/auth', authRoutes);
-app.use('/api/v1/student', studentRoutes);
-app.use('/api/v1/server', serverRoutes);
-app.use('/api/v1/josephine', josephineRoutes);
-app.use('/api/v1/inbox', inboxRoutes);
 
 // Health check endpoint
 app.get('/health', (_req: Request, res: Response) => {
@@ -81,6 +57,6 @@ app.use((req: Request, res: Response) => {
 });
 
 // Start server
-server.listen(PORT, () => console.log('Server running on PORT:', PORT));
+app.listen(PORT, () => console.log('Server running on PORT:', PORT));
 
 export default app;

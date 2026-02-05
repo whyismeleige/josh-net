@@ -1,17 +1,16 @@
 import express, { Application, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
-import dotenv from 'dotenv';
 import connectDB from './database/connectDB';
+import { env } from '@config/env.config';
 
-// Load environment variables
-dotenv.config();
+import authRoutes from "./routes/auth.routes"; 
 
 // Create Express app
 const app: Application = express();
 
 // Server port
-const PORT: number = parseInt(process.env.PORT || '8080', 10);
+const PORT: number = parseInt(env.PORT, 10);
 
 // CORS configuration
 app.use(
@@ -27,6 +26,9 @@ app.use(express.urlencoded({ extended: true }));
 
 // Connect to database
 connectDB();
+
+// Routes
+app.use('/api/auth', authRoutes);
 
 // Health check endpoint
 app.get('/health', (_req: Request, res: Response) => {

@@ -700,6 +700,7 @@ exports.linkGoogleAccount = asyncHandler(async (req, res) => {
     throw new ValidationError("Only St Joseph's College Email allowed");
   }
 
+
   const existingGoogleUser = await User.findOne({ googleID: googleData.id });
 
   if (

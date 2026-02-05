@@ -3,7 +3,7 @@ import * as controller from "../controllers/auth.controller";
 import * as middleware from "../middleware/auth.middleware";
 import * as validator from "../validators/auth.validator";
 import * as limiter from "../limiters/auth.limiter";
-import { validate } from "src/middleware/validate.middleware";
+import { validate } from "@middleware/validate.middleware";
 
 const router = express.Router();
 
@@ -14,6 +14,11 @@ router.post(
   controller.login,
 );
 
-router.post()
+router.post(
+  "/register",
+  limiter.publicLimiter,
+  validate(validator.registerSchema),
+  controller.register,
+);
 
 export default router;

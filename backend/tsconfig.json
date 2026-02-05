@@ -5,12 +5,11 @@
     "lib": ["ES2022"],
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-
     /* Modules */
     "module": "commonjs",
-    "rootDir": "./",
+    "rootDir": "./src",
     "moduleResolution": "node",
-    "baseUrl": "./",
+    "baseUrl": "./src",
     "paths": {
       "@models/*": ["models/*"],
       "@controllers/*": ["controllers/*"],
@@ -18,17 +17,19 @@
       "@utils/*": ["utils/*"],
       "@services/*": ["services/*"],
       "@config/*": ["config/*"],
-      "@types/*": ["types/*"]
+      "@custom-types/*": ["types/*"],
+      "@routes/*": ["routes/*"],
+      "@validators/*": ["validators/*"],
+      "@database/*": ["database/*"],
+      "@limiters/*": ["limiters/*"]
     },
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-
     /* Emit */
     "outDir": "./dist",
     "removeComments": true,
     "sourceMap": true,
-
     /* Type Checking */
     "strict": true,
     "noImplicitAny": true,
@@ -43,19 +44,19 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,
-
     /* Interop Constraints */
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true
   },
   "include": [
-    "**/*.ts",
-    "**/*.js"
+    "src/**/*.ts"
   ],
   "exclude": [
     "node_modules",
     "dist",
-    "tests"
+    "tests",
+    "**/*.test.ts",
+    "**/*.spec.ts"
   ],
   "ts-node": {
     "require": ["tsconfig-paths/register"],

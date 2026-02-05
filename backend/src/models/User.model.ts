@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
-import { IMetadata, IUser } from "src/types/models/user.model.types";
 import bcrypt from "bcrypt";
+import { IMetadata, IUser } from "@custom-types/models/user.model.types";
 
 export interface IUserDocument extends IUser, Document {};
 type UserModelType = Model<IUserDocument>;

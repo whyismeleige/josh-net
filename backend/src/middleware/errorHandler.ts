@@ -1,3 +1,4 @@
+import { env } from "@config/env.config";
 import { Request, Response, NextFunction } from "express";
 
 // Define a custom interface for the error object to handle optional properties
@@ -66,7 +67,7 @@ const errorHandler = (
   res.status(error.statusCode || 500).send({
     message: error.message || "Server Error",
     type: error.type || "error",
-    ...(process.env.NODE_ENV === "development" && {
+    ...(env.NODE_ENV === "development" && {
       stack: err.stack,
       ...(err.originalError && { apiError: err.originalError.message }),
     }),

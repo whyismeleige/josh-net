@@ -1,8 +1,8 @@
-import asyncHandler from "src/middleware/asyncHandler";
-import { Request, Response } from "express";
-import { getMetaData } from "src/utils/auth.utils";
-import AuthService from "src/services/auth.service";
-import { env } from "src/config/env.config";
+import { env } from "@config/env.config";
+import asyncHandler from "@middleware/asyncHandler";
+import AuthService from "@services/auth.service";
+import { getMetaData } from "@utils/auth.utils";
+import { Request, Response } from "express"
 
 const getCookieOptions = () => ({
   httpOnly: true,
@@ -31,13 +31,19 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
 export const login = asyncHandler(async (req: Request, res: Response) => {
   const metadata = getMetaData(req);
 
+  const { token, ...result } = await AuthService.loginUser(req.body, metadata);
+
+  res.cookie("token", token, getCookieOptions());
+
+  res.status(200).send({
+    message: "User Logged In successfully",
+    type: "success",
+    ...result,
+  });
 });
 
-export const sendOTP = asyncHandler(async (req: Request, res: Response) => {
+export const sendOTP = asyncHandler(async (req: Request, res: Response) => {});
 
-})
-
-export const verifyOTP = asyncHandler(async (req: Request, res: Response) => {
-
-})
-
+export const verifyOTP = asyncHandler(
+  async (req: Request, res: Response) => {},
+);

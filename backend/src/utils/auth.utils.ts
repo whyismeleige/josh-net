@@ -2,9 +2,9 @@ import jwt from "jsonwebtoken";
 import geoip from "geoip-lite";
 import { UAParser } from "ua-parser-js";
 import { Request } from "express";
-import { env } from "src/config/env.config";
-import { IUserDocument } from "src/models/User.model";
-import { JWTPayload } from "src/types/jwt.types";
+import { env } from "@config/env.config";
+import { IUserDocument } from "@models/User.model";
+import { JWTPayload } from "@custom-types/jwt.types";
 
 export const getMetaData = (req: Request) => {
   const ipAddress = req.ip || req.socket.remoteAddress;

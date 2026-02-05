@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from "express";
-import redisClient from "src/database/redis";
-import User, { IUserDocument } from "src/models/User.model";
-import { verifyToken } from "src/utils/auth.utils";
-import { AuthorizationError, NotFoundError } from "src/utils/error.utils";
+import redisClient from "@database/redis";
+import User, { IUserDocument } from "@models/User.model";
+import { verifyToken } from "@utils/auth.utils";
+import { AuthorizationError, NotFoundError } from "@utils/error.utils";
 
 export interface AuthRequest extends Request {
   user?: IUserDocument;

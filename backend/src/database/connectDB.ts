@@ -1,10 +1,8 @@
 import mongoose from 'mongoose';
-import dotenv from 'dotenv';
+import { env } from '@config/env.config';
 
-dotenv.config();
-
-const url: string = process.env.MONGO_URI || '';
-const dbName: string = process.env.DB_NAME || 'college_database';
+const url: string = env.MONGODB_URI || '';
+const dbName: string = env.DB_NAME || 'college_database';
 
 const connectDB = async (): Promise<void> => {
   try {
